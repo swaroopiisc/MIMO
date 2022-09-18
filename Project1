@@ -1,0 +1,207 @@
+
+clear all;
+clc;
+%% Question 1
+load('LOS_8_8.mat')
+%% M = 1
+M = 1;
+Mt = M;
+Mr = M;
+
+N=401;
+N_vec = 1:1:401;
+
+for i=1:N
+    fronorm1(i) = norm(H(1:1,1:1,i),"fro");
+    %H_norm = H/sqrt(fronorm(i)/(1.*Mt.*Mr));
+end
+sum_fronorm1 = sum(fronorm1);
+H_norm2 = H/sqrt(sum_fronorm1/(N.*Mt.*Mr));
+
+for i=1:N
+   % eigenvalues(:,i) = eig(H_norm(:,:,i));
+    eigenvalues1(:,i) = eig(H_norm2(1:1,1:1,i));
+end
+%abs_eigen = abs(eigenvalues);
+abs_eigen1 = abs(eigenvalues1);
+sorted_eigen1 = sort(abs_eigen1);
+part_of_level1 = Mt./(sorted_eigen1);
+
+SNR = 0:25;
+
+for j=1:length(SNR)
+    %inside_cap = 1.+(10.^(SNR(j)/10).*abs_eigen)/(Mt);
+    inside_cap1 = 1.+(10.^(SNR(j)/10).*abs_eigen1)/(Mt);
+    for i=1:N
+        %capacity(j,i) = sum(log2(inside_cap(:,i)));
+        capacity1(j,i) = sum(log2(inside_cap1(:,i)));
+    end
+
+    %ergodic_capacity(j) = sum(capacity(j,:))/length(capacity(j,:));
+    ergodic_capacity1_unknown(j) = sum(capacity1(j,:))/N;
+    levels1(:,:,j) = part_of_level1./10.^(SNR(j)/10);
+    for i=1:N
+        gammas1(:,i) = waterfill2(levels1(:,i,j),Mt);
+    end
+    for i=1:N
+        capacity11(j,i) = sum(log2(1+gammas1(:,i)./levels1(:,i,j)));
+    end
+    ergodic_capacity1_known(j) = sum(capacity11(j,:))/N;
+end
+
+%% M = 2
+M = 2;
+Mt = M;
+Mr = M;
+
+N=401;
+N_vec = 1:1:401;
+
+for i=1:N
+    fronorm2(i) = norm(H(1:2,1:2,i),"fro");
+    %H_norm = H/sqrt(fronorm(i)/(1.*Mt.*Mr));
+end
+sum_fronorm2 = sum(fronorm2);
+H_norm2 = H/sqrt(sum_fronorm2/(N.*Mt.*Mr));
+
+for i=1:N
+   % eigenvalues(:,i) = eig(H_norm(:,:,i));
+    eigenvalues2(:,i) = eig(H_norm2(1:2,1:2,i));
+end
+%abs_eigen = abs(eigenvalues);
+abs_eigen2 = abs(eigenvalues2);
+sorted_eigen2 = sort(abs_eigen2);
+part_of_level2 = Mt./(sorted_eigen2);
+
+SNR = 0:25;
+
+for j=1:length(SNR)
+    %inside_cap = 1.+(10.^(SNR(j)/10).*abs_eigen)/(Mt);
+    inside_cap2 = 1.+(10.^(SNR(j)/10).*abs_eigen2)/(Mt);
+    for i=1:N
+        %capacity(j,i) = sum(log2(inside_cap(:,i)));
+        capacity2(j,i) = sum(log2(inside_cap2(:,i)));
+    end
+
+    %ergodic_capacity(j) = sum(capacity(j,:))/length(capacity(j,:));
+    ergodic_capacity2_unknown(j) = sum(capacity2(j,:))/N;
+    levels2(:,:,j) = part_of_level2./10.^(SNR(j)/10);
+    for i=1:N
+        gammas2(:,i) = waterfill2(levels2(:,i,j),Mt);
+    end
+    for i=1:N
+        capacity2(j,i) = sum(log2(1+gammas2(:,i)./levels2(:,i,j)));
+    end
+    ergodic_capacity2_known(j) = sum(capacity2(j,:))/N;
+end
+
+%% M = 4
+M = 4;
+Mt = M;
+Mr = M;
+
+N=401;
+N_vec = 1:1:401;
+
+for i=1:N
+    fronorm4(i) = norm(H(1:4,1:4,i),"fro");
+    %H_norm = H/sqrt(fronorm(i)/(1.*Mt.*Mr));
+end
+sum_fronorm4 = sum(fronorm4);
+H_norm4 = H/sqrt(sum_fronorm4/(N.*Mt.*Mr));
+
+for i=1:N
+   % eigenvalues(:,i) = eig(H_norm(:,:,i));
+    eigenvalues4(:,i) = eig(H_norm4(1:4,1:4,i));
+end
+%abs_eigen = abs(eigenvalues);
+abs_eigen4 = abs(eigenvalues4);
+sorted_eigen4 = sort(abs_eigen4);
+part_of_level4 = Mt./(sorted_eigen4);
+
+SNR = 0:25;
+
+for j=1:length(SNR)
+    %inside_cap = 1.+(10.^(SNR(j)/10).*abs_eigen)/(Mt);
+    inside_cap4 = 1.+(10.^(SNR(j)/10).*abs_eigen4)/(Mt);
+    for i=1:N
+        %capacity(j,i) = sum(log2(inside_cap(:,i)));
+        capacity4(j,i) = sum(log2(inside_cap4(:,i)));
+    end
+
+    %ergodic_capacity(j) = sum(capacity(j,:))/length(capacity(j,:));
+    ergodic_capacity4_unknown(j) = sum(capacity4(j,:))/N;
+    levels4(:,:,j) = part_of_level4./10.^(SNR(j)/10);
+    for i=1:N
+        gammas4(:,i) = waterfill2(levels4(:,i,j),Mt);
+    end
+    for i=1:N
+        capacity4(j,i) = sum(log2(1+gammas4(:,i)./levels4(:,i,j)));
+    end
+    ergodic_capacity4_known(j) = sum(capacity4(j,:))/N;
+end
+%% M = 8
+M = 8;
+Mt = M;
+Mr = M;
+
+N=401;
+N_vec = 1:1:401;
+
+for i=1:N
+    fronorm8(i) = norm(H(1:8,1:8,i),"fro");
+    %H_norm = H/sqrt(fronorm(i)/(1.*Mt.*Mr));
+end
+sum_fronorm8 = sum(fronorm8);
+H_norm8 = H/sqrt(sum_fronorm8/(N.*Mt.*Mr));
+
+for i=1:N
+   % eigenvalues(:,i) = eig(H_norm(:,:,i));
+    eigenvalues8(:,i) = eig(H_norm8(1:8,1:8,i));
+end
+%abs_eigen = abs(eigenvalues);
+abs_eigen8 = abs(eigenvalues8);
+sorted_eigen8 = sort(abs_eigen8);
+part_of_level8 = Mt./(sorted_eigen8);
+
+SNR = 0:25;
+
+for j=1:length(SNR)
+    %inside_cap = 1.+(10.^(SNR(j)/10).*abs_eigen)/(Mt);
+    inside_cap8 = 1.+(10.^(SNR(j)/10).*abs_eigen8)/(Mt);
+    for i=1:N
+        %capacity(j,i) = sum(log2(inside_cap(:,i)));
+        capacity8(j,i) = sum(log2(inside_cap8(:,i)));
+    end
+
+    %ergodic_capacity(j) = sum(capacity(j,:))/length(capacity(j,:));
+    ergodic_capacity8_unknown(j) = sum(capacity8(j,:))/N;
+    levels8(:,:,j) = part_of_level8./10.^(SNR(j)/10);
+    for i=1:N
+        gammas8(:,i) = waterfill2(levels8(:,i,j),Mt);
+    end
+    for i=1:N
+        capacity8(j,i) = sum(log2(1+gammas8(:,i)./levels8(:,i,j)));
+    end
+    ergodic_capacity8_known(j) = sum(capacity8(j,:))/N;
+end
+%% Plotting figures
+figure
+hold on
+plot(SNR,ergodic_capacity1_unknown,'r-');
+plot(SNR,ergodic_capacity1_known,'k--');
+
+plot(SNR,ergodic_capacity2_unknown,'g-');
+plot(SNR,ergodic_capacity2_known,'g--');
+
+plot(SNR,ergodic_capacity4_unknown,'b-');
+plot(SNR,ergodic_capacity4_known,'b--');
+
+plot(SNR,ergodic_capacity8_unknown,'m-');
+plot(SNR,ergodic_capacity8_known,'m--');
+
+
+legend('Unknown 1x1','known1x1','Unknown 2x2','known 2x2','Unknown 4x4','known 4x4','Unknown 8x8','known 8x8');
+hold off
+
+
