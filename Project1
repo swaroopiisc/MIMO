@@ -527,5 +527,40 @@ plot(SNR,capacity_ten_procent_mimo_2,'b*--');
 plot(SNR,capacity_one_procent_mimo_4,'ro-');
 plot(SNR,capacity_ten_procent_mimo_4,'g*--');
 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 2nd part
+% For SISO 
+N1 = 400;
+SNR = 0:25;
+
+H_part2 = 1/sqrt(2)*(randn(4,4,401)+j*randn(4,4,401));
+H_siso = H_part2(1,1,:);
+
+for i = 1:N1
+    fronormsiso(i) = norm(H_siso(1,1,i),"fro");
+end
+sum_fronormsiso = sum(fronormsiso);
+H_normsiso = H_siso/sqrt(sum_fronormsiso/(N1.*1*1));
+
+abs_siso = abs(H_normsiso).^2;
+for j=1:length(SNR)
+    inside_capsiso = 1.+(10^(SNR(j)./10).*abs_siso);
+    for i=1:N1
+        capacity_siso(j,i) = sum(log2(inside_capsiso(:,i)));
+    end
+    ergodic_capacity_siso(j) = sum(capacity_siso(j,:))/N1;
+end
+
+capacity_siso = log2(1 +SNR);
+
+figure
+plot(SNR,capacity_siso,'r-');
+hold on 
+plot(SNR,ergodic_capacity_siso,'k--');
+hold off
+legend('Formual','Practical')
+
 legend('MIMO 2x2, 1% outage','MIMO 2x2, 10% outage','MIMO 4x4, 1% outage','MIMO 4x4, 10% outage','Location','best');
 
