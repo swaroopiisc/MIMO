@@ -74,6 +74,95 @@ eta =  avg_eig_max/avg_eig_min;
 
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Task one
+clear all;
+clc;
+MR = 2;
+MT = 2;
+N = 200; % Nr of real
 
+H1 = [1,1;1,1];
+H2 = [1,1;1,-1];
+
+Hr = 1/sqrt(2)*(randn(MR,MT,N)+1i*randn(MR,MT,N)); %  Channel realizations
+k = 1:1:20;
+lineark = 10.^(k./10);
+
+for x =1:length(k)
+    H_rice1 = sqrt(lineark(x)/(lineark(x) + 1)).*H1 + sqrt(1/(lineark(x) + 1)).*Hr;
+    H_rice2 = sqrt(lineark(x)/(lineark(x) + 1)).*H2 + sqrt(1/(lineark(x) + 1)).*Hr;
+    
+    for i = 1:N
+        H_rice1_norm(i) = norm(H_rice1(1:MR,1:MT,i),"fro");
+%         H_rice1_normalised(:,:,i) = H_rice1(:,:,i)./sqrt(1.*MT.*MR.*H_rice1_norm(i));
+        H_rice2_norm(i) = norm(H_rice2(1:MR,1:MT,i),"fro");
+%         H_rice2_normalised(:,:,i) = H_rice2(:,:,i)./sqrt(1.*MT.*MR.*H_rice2_norm(i));
+    end
+    sum_h_rice1_norm = sum(H_rice1_norm);
+    H_rice1_normalised = H_rice1./sqrt(N.*MT.*MR.*sum_h_rice1_norm);
+    
+    sum_h_rice2_norm = sum(H_rice2_norm);
+    H_rice2_normalised = H_rice2./sqrt(N.*MT.*MR.*sum_h_rice2_norm);
+    
+    for i =1:N
+        eig_rice1_norm(:,i) = eig(H_rice1_normalised(1:MR,1:MT,i));
+        eig_rice2_norm(:,i) = eig(H_rice2_normalised(1:MR,1:MT,i));
+    end
+    abs_eig_rice1_norm = abs(eig_rice1_norm);
+    abs_eig_rice2_norm = abs(eig_rice2_norm);
+    rice1_eigen_sorted = sort(abs_eig_rice1_norm,'descend');
+    rice2_eigen_sorted = sort(abs_eig_rice2_norm,'descend');
+    
+    
+    %for i=1:N
+%         eig_rice1_max = max(abs_eig_rice1_norm);
+%         eig_rice1_min = min(abs_eig_rice1_norm);
+%         eig_rice2_max = max(abs_eig_rice2_norm);
+%         eig_rice2_min = min(abs_eig_rice2_norm);
+    %end
+    avg_eig_rice1_max(x) = mean(rice1_eigen_sorted(1,:));
+    avg_eig_rice1_min(x) = mean(rice1_eigen_sorted(2,:));
+    avg_eig_rice2_max(x) = mean(rice2_eigen_sorted(1,:));
+    avg_eig_rice2_min(x) = mean(rice2_eigen_sorted(1,:));
+    
+    eta_rice1(x) = avg_eig_rice1_max/avg_eig_rice1_min;
+    eta_rice2(x) = avg_eig_rice2_max/avg_eig_rice2_min;
+end    
+    
+figure(1)
+plot(k,eta_rice1,'r*--')
+hold on
+plot(k,eta_rice2,'b.--')
+hold off
+
+N=200;
+M=2;
+MR = 2;
+MT = 2;
+r=0:0.1:1;
+Hw = 1/sqrt(2)*(randn(MR,MT,N)+1i*randn(MR,MT,N));
+
+capacity_outage_10 = zeros(length(r),N);
+for j=1:length(r)
+    Rt = [1,r(j),r(j)^2;r(j),1,r(j);r(j)^2,r(j),1];
+    Rr = Rt;
+    
+    for i=1:N
+        capacity_inst(i) = log2(det((100/M).*(Hw(:,:,i)*Hw(:,:,i)')));
+        capacity_outage_10(j,i) = capacity_inst(i) + log2(det(Rr)) + log2(det(Rt));
+    end
+    [f_outage x_outage] = ecdf(capacity_outage_10(j,:));
+    outage_capacity(j) = x_outage(max(find(f_outage<=0.1)));
+    
+%     capacity_erg = sum(capacity_inst)./N;
+%     capacity_erg_final(j) = capacity_erg + log2(det(Rr)) + log2(det(Rt));
+    
+    
+    
+end
+
+figure(2)
+plot(r,outage_capacity,'r*--')
 
 
