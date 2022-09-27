@@ -1,0 +1,79 @@
+
+%% Task one
+clear all;
+clc;
+MR = 2;
+MT = 2;
+N = 10; % Nr of real
+
+H1 = [1,1;1,1];
+H2 = [1,1;1,-1];
+
+Hr = 1/sqrt(2)*(randn(MR,MT,N)+1i*randn(MR,MT,N)); %  Channel realizations
+
+
+%% H1 norm/pow
+
+H1_fNorm = norm(H1(1:MR,1:MT),"fro");
+SUM_H1_fNorm = sum(H1_fNorm);
+
+H1_norm = H1.*(1/sqrt(1/N*MT*MT*SUM_H1_fNorm));
+eig_H1_norm = eig(H1_norm);
+abs_eig_H1_norm = abs(eig_H1_norm);
+power_H1 = sum(abs_eig_H1_norm);
+
+%% Hreali norm/pow
+
+
+for i = 1:N;
+    Hr_fNorm(i) = norm(Hr(1:MR,1:MT,i),"fro");
+end
+
+SUM_Hr_fNorm = sum(Hr_fNorm);
+Hr_norm = Hr.*(1/sqrt(1/N*MT*MT*SUM_Hr_fNorm));
+
+for i = 1:N
+eig_Hr_norm(:,i) = eig(Hr_norm(1:MR,1:MT,i));
+end
+abs_eig_Hr_norm = abs(eig_Hr_norm);
+
+
+for i = 1:N
+eig_max(i) = max(eig_Hr_norm(:,i));
+eig_min(i) = min(eig_Hr_norm(:,i));
+end
+
+avg_eig_max = mean(eig_max);
+avg_eig_min = mean(eig_min);
+
+
+
+eta =  avg_eig_max/avg_eig_min;
+
+
+
+
+%% H norm/pow
+
+H = sqrt(K/(1+K))*H_1+sqrt(1/(1+k))*Hr_norm;
+
+for i = 1:N
+eig_H_norm(:,i) = eig(H_norm(1:MR,1:MT,i));
+end
+
+eig_H_norm = abs(eig_H_norm);
+for i = 1:N
+eig_max(i) = max(eig_H_norm(:,i));
+eig_min(i) = min(eig_H_norm(:,i));
+end
+
+avg_eig_max = mean(eig_max);
+avg_eig_min = mean(eig_min);
+
+eta =  avg_eig_max/avg_eig_min;
+
+
+
+
+
+
