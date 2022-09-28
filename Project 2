@@ -165,4 +165,89 @@ end
 figure(2)
 plot(r,outage_capacity,'r*--')
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Task one
+clear all;
+clc;
 
+MR = 2;   %Nr of rx antennas
+MT = 2;    % Nr of tx antennas
+N = 10000; % Nr of realisations
+
+H1 = [1,1;1,1];
+H2 = [1,1;1,-1];
+
+Hr = 1/sqrt(2)*(randn(MR,MT,N)+j*randn(MR,MT,N)); %  Channel realizations
+k = 0:1:20;
+lineark = 10.^(k./10);
+
+for x =1:length(k)
+    H_rice1 = sqrt(lineark(x)/(lineark(x) + 1)).*H1 + sqrt(1/(lineark(x) + 1)).*Hr;
+    H_rice2 = sqrt(lineark(x)/(lineark(x) + 1)).*H2 + sqrt(1/(lineark(x) + 1)).*Hr;
+    
+    for i = 1:N
+        H_rice1_norm(i) = norm(H_rice1(1:MR,1:MT,i),"fro");
+%         H_rice1_normalised(:,:,i) = H_rice1(:,:,i)./sqrt(1.*MT.*MR.*H_rice1_norm(i));
+        H_rice2_norm(i) = norm(H_rice2(1:MR,1:MT,i),"fro");
+%         H_rice2_normalised(:,:,i) = H_rice2(:,:,i)./sqrt(1.*MT.*MR.*H_rice2_norm(i));
+    end
+
+    sum_H_rice1_norm = sum(H_rice1_norm);
+    H_rice1_normalised = H_rice1./sqrt(sum_H_rice1_norm/(N.*MT.*MR));
+    sum_H_rice2_norm = sum(H_rice2_norm);
+    H_rice2_normalised = H_rice2./sqrt(sum_H_rice2_norm/(N.*MT.*MR));
+
+    for i =1:N
+        eig_rice1_norm(:,i) = eig(H_rice1_normalised(1:MR,1:MT,i));
+        eig_rice2_norm(:,i) = eig(H_rice2_normalised(1:MR,1:MT,i));
+    end
+
+    abs_eig_rice1_norm = abs(eig_rice1_norm);
+    abs_eig_rice2_norm = abs(eig_rice2_norm);
+
+    rice1_eigen_sorted = sort(abs_eig_rice1_norm,'descend');
+    rice2_eigen_sorted = sort(abs_eig_rice2_norm,'descend');
+    
+    avg_eig_rice1_max(x) = mean(rice1_eigen_sorted(1,:));
+    avg_eig_rice1_min(x) = mean(rice1_eigen_sorted(2,:));
+    avg_eig_rice2_max(x) = mean(rice2_eigen_sorted(1,:));
+    avg_eig_rice2_min(x) = mean(rice2_eigen_sorted(1,:));
+    
+    eta_rice1(x) = avg_eig_rice1_max/avg_eig_rice1_min;
+    eta_rice2(x) = avg_eig_rice2_max/avg_eig_rice2_min;
+end    
+    
+figure(1)
+plot(k,abs(eta_rice1),'r*-')
+hold on
+plot(k,abs(eta_rice2),'bo-')
+hold off
+%% part 2
+N=2000;
+M=2;
+MR = 2;
+MT = 2;
+r=0:0.1:1;
+Hw = 1/sqrt(2)*(randn(MR,MT,N)+j*randn(MR,MT,N));
+SNR = 10^(20/10);
+
+capacity_outage_10 = zeros(length(r),N);
+for j=1:length(r)
+    Rt = [1,r(j),r(j)^2;r(j),1,r(j);r(j)^2,r(j),1];
+    Rr = Rt;
+    
+    for i=1:N
+        capacity_inst(i) = log2((SNR/M)^3.*det((Hw(:,:,i)*Hw(:,:,i)')));
+%         if det(Rr) ~= 0
+            capacity_outage_10(j,i) = capacity_inst(i) + log2(det(Rr)) + log2(det(Rt));
+%         else 
+%             capacity_outage_10(j,i) = capacity_inst(i);
+%         end
+    end
+    %[f_outage x_outage] = ecdf(abs(capacity_outage_10(j,:)));
+    [f_outage x_outage] = ecdf(abs(capacity_outage_10(j,:)));
+    outage_capacity(j) = x_outage(max(find(f_outage<=0.1)));   
+end
+
+figure(2)
+plot(r,outage_capacity,'r*--')
