@@ -1,0 +1,105 @@
+% A MATLAB routine for help to solve the last problem in this project
+% assignment.
+% Edited by Ruiyuan.Tian@eit.lth.se, 2009/09/03
+
+
+angsprV=[5 10 20 50];% Put the range of desired angular spread (in degree)
+dV=[0.1:0.1:0.4 0.5:0.5:10]; % Spacing between antenna elements (in wavelength)
+
+Nt=4; % Number of ULA elements at TX
+Nr=4; % Number of ULA elements at RX
+MC=5000; % Number of trials to obtain capacity distribution (channel realizations)
+snrdB=20; % in dB
+snr=10^(snrdB/10); % SNR at the receiver
+theta=linspace(-pi,pi,1441); % generate a sequence of theta [-pi, pi]
+
+for ii=1:length(angsprV) %% loop for different angular power spectrums
+    ii 
+    for k=1:length(dV) %% loop for different antenna spacings
+        
+        % Spatial correlation at the TX (MS)
+            % angular power spectrum?
+            apsTX=1/(2*pi);
+            % antenna spacing? 
+            dTX=0.5; 
+            % array factor of each element?
+            aTX(1,:)=[exp(-j*3*pi*dTX*sin(theta)).*sqrt(apsTX)];
+            aTX(2,:)=[exp(-j*1*pi*dTX*sin(theta)).*sqrt(apsTX)];
+            aTX(3,:)=[exp(j*1*pi*dTX*sin(theta)).*sqrt(apsTX)];
+            aTX(4,:)=[exp(j*3*pi*dTX*sin(theta)).*sqrt(apsTX)];
+            % Rt=?;
+            for m=1:4
+                for n=1:4
+                    Rt(m,n)=sum(aTX(m,:)*aTX(n,:)')/(sqrt(sum(aTX(m,:)*aTX(m,:)'))*sqrt(sum(aTX(n,:)*aTX(n,:)')));
+                end
+            end
+              
+        % Spatial correlation at the RX (BS)
+            % angular power spectrum?
+            angspr(ii)=angsprV(ii)/180*pi;
+            apsRX(ii,:)=exp(-sqrt(2).*abs(theta)/(angspr(ii)))/(angspr(ii).*sqrt(2));
+            % antenna spacing?
+            dRX(k)=dV(k);       
+            % array factor of each element?
+            aRX(1,:)=[exp(-j*3*pi*(dRX(k)/2)*sin(theta)).*sqrt(apsRX(ii,:))];
+            aRX(2,:)=[exp(-j*1*pi*(dRX(k)/2)*sin(theta)).*sqrt(apsRX(ii,:))];
+            aRX(3,:)=[exp(j*1*pi*(dRX(k)/2)*sin(theta)).*sqrt(apsRX(ii,:))];
+            aRX(4,:)=[exp(j*3*pi*(dRX(k)/2)*sin(theta)).*sqrt(apsRX(ii,:))];
+            ...
+            % Rr=?
+            for m=1:4
+                for n=1:4
+                    Rr(m,n)=sum(aRX(m,:)*aRX(n,:)')/(sqrt(sum(aRX(m,:)*aRX(m,:)'))*sqrt(sum(aRX(n,:)*aRX(n,:)')));
+                end
+            end
+            ...
+        
+        % Use Kronecker model to generate channel matrix H and calculate capacity C
+        L=(Rr)^(1/2);
+        R=(Rt)^(1/2);
+        
+        % generate i.i.d. channel Hw for several realizations
+        % obtain kronecker channel for each realizations
+        % e.g., H=L*Hw*R;
+        Hw=1/sqrt(2)*(randn(Nr,Nt,MC)+j*randn(Nr,Nt,MC));
+        for i = 1:MC
+            H(:,:,i) = L*Hw(:,:,i)*R;
+        end
+        ...
+        
+        % channel normalization
+        for i = 1:MC
+            fronorm(i) = norm(H(:,:,i),"fro");
+        end
+        sum_fronorm = sum(fronorm.^2);
+        H_norm = H/sqrt(sum_fronorm/(MC*Nt*Nr));
+        for i = 1:MC
+            eigen(:,i) = eig(H_norm(:,:,i));
+        end
+        abs_eigen = abs(eigen);
+        ...
+        
+        % capacity calculation for each realization
+        term1 = (snr/Nt).*abs_eigen;
+        for i=1:MC
+            capacity(i) = sum(log2(1+term1(:,i)));
+        end
+                   
+        ...
+        
+        % find the 10% outage capacity  
+        [f x] = ecdf(capacity);
+        outage_capacity_10(k,ii) = x(max(find(f-0.1)));
+        ...
+        
+    end
+    figure
+    plot(dV,outage_capacity_10(:,ii),'*--');
+    xlabel('antenna spacing')
+    ylabel('Outage capacity')
+    title('Outage capacity vs antenna spacing at the BS for angular spread ',num2str(angsprV(ii)))
+end
+
+% plot capacity vesus spacing for different angular power spectrums
+
+
