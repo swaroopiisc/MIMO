@@ -102,4 +102,128 @@ end
 
 % plot capacity vesus spacing for different angular power spectrums
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% A MATLAB routine for help to solve the last problem in this project
+% assignment.
+% Edited by Ruiyuan.Tian@eit.lth.se, 2009/09/03
+
+
+angsprV=[5 10 20 50];% Put the range of desired angular spread (in degree)
+angsprV2 = 5:5:50;
+dV=[0.1:0.1:0.4 0.5:0.5:10]; % Spacing between antenna elements (in wavelength)
+
+Nt=4; % Number of ULA elements at TX
+Nr=4; % Number of ULA elements at RX
+MC=5000; % Number of trials to obtain capacity distribution (channel realizations)
+snrdB=20; % in dB
+snr=10^(snrdB/10); % SNR at the receiver
+theta=linspace(-pi,pi,1441); % generate a sequence of theta [-pi, pi]
+figure
+for ii=1:length(angsprV) %% loop for different angular power spectrums
+    ii 
+    for k=1:length(dV) %% loop for different antenna spacings
+        
+        % Spatial correlation at the TX (MS)
+            % angular power spectrum?
+            apsTX=1/(2*pi);
+            % antenna spacing? 
+            dTX=0.5; 
+            % array factor of each element?
+            aTX(1,:)=[exp(-j*3*pi*dTX*sin(theta)).*sqrt(apsTX)];
+            aTX(2,:)=[exp(-j*1*pi*dTX*sin(theta)).*sqrt(apsTX)];
+            aTX(3,:)=[exp(j*1*pi*dTX*sin(theta)).*sqrt(apsTX)];
+            aTX(4,:)=[exp(j*3*pi*dTX*sin(theta)).*sqrt(apsTX)];
+            % Rt=?;
+            for m=1:4
+                for n=1:4
+                    Rt(m,n)=sum(aTX(m,:)*aTX(n,:)')/(sqrt(sum(aTX(m,:)*aTX(m,:)'))*sqrt(sum(aTX(n,:)*aTX(n,:)')));
+                end
+            end
+              
+        % Spatial correlation at the RX (BS)
+            % angular power spectrum?
+            angspr(ii)=angsprV(ii)/180*pi;
+            apsRX(ii,:)=exp(-sqrt(2).*abs(theta)/(angspr(ii)))/(angspr(ii).*sqrt(2));
+            % antenna spacing?
+            dRX(k)=dV(k);       
+            % array factor of each element?
+            aRX(1,:)=[exp(-j*3*pi*(dRX(k))*sin(theta)).*sqrt(apsRX(ii,:))];
+            aRX(2,:)=[exp(-j*1*pi*(dRX(k))*sin(theta)).*sqrt(apsRX(ii,:))];
+            aRX(3,:)=[exp(j*1*pi*(dRX(k))*sin(theta)).*sqrt(apsRX(ii,:))];
+            aRX(4,:)=[exp(j*3*pi*(dRX(k))*sin(theta)).*sqrt(apsRX(ii,:))];
+            ...
+            % Rr=?
+            for m=1:4
+                for n=1:4
+                    Rr(m,n)=sum(aRX(m,:)*aRX(n,:)')/(sqrt(sum(aRX(m,:)*aRX(m,:)'))*sqrt(sum(aRX(n,:)*aRX(n,:)')));
+                end
+            end
+            ...
+        
+        % Use Kronecker model to generate channel matrix H and calculate capacity C
+        L=(Rr)^(1/2);
+        R=(Rt)^(1/2);
+        
+        % generate i.i.d. channel Hw for several realizations
+        % obtain kronecker channel for each realizations
+        % e.g., H=L*Hw*R;
+        Hw=1/sqrt(2)*(randn(Nr,Nt,MC)+j*randn(Nr,Nt,MC));
+        for i = 1:MC
+            H(:,:,i) = L*Hw(:,:,i)*R;
+        end
+        ...
+        
+        % channel normalization
+        for i = 1:MC
+            fronorm(i) = norm(H(:,:,i),"fro");
+        end
+        sum_fronorm = sum(fronorm.^2);
+        H_norm = H/sqrt(sum_fronorm/(MC*Nt*Nr));
+        for i = 1:MC
+            eigen(:,i) = eig(H_norm(:,:,i));
+        end
+        abs_eigen = abs(eigen);
+        ...
+        
+        % capacity calculation for each realization
+        term1 = (snr/Nt).*abs_eigen;
+        for i=1:MC
+            capacity(i) = sum(log2(1+term1(:,i)));
+            capacity_actual(i) = sum(abs(log2(det(eye(Nt) + (snr/Nt).*(L*Hw(:,:,i)*Rt*Hw(:,:,i)'*L')))));
+        end
+                   
+        ...
+        
+        % find the 10% outage capacity  
+        [f x] = ecdf(capacity_actual);
+        outage_capacity_10(k,ii) = x(max(find(f-0.1)));
+        ...
+        
+    end
+    %figure
+    hold on
+    grid on
+    plot(dV,outage_capacity_10(:,ii),'o--');
+    xlabel('antenna spacing')
+    ylabel('Outage capacity')
+    %title('Outage capacity vs antenna spacing at the BS for angular spread ',num2str(angsprV(ii)))
+end
+hold off
+legend('angle spread = 5','angle spread = 10','angle spread = 20','angle spread = 50','Location','best')
+
+
+figure
+grid on
+plot(angsprV,outage_capacity_10(1,:),'o--')
+hold on
+for i=2:length(dV)
+    plot(angsprV,outage_capacity_10(i,:),'o--')
+end
+hold off
+legend('antenna spacing = 0.1','antenna spacing = 0.2','antenna spacing = 0.3','antenna spacing = 0.4','antenna spacing = 0.5','antenna spacing = 1','antenna spacing = 1.5','antenna spacing = 2.0','antenna spacing = 2.5','antenna spacing = 3.0','antenna spacing = 3.5','antenna spacing = 4.0','antenna spacing = 4.5','antenna spacing = 5.0','antenna spacing = 5.5','antenna spacing = 6.0','antenna spacing = 6.5','antenna spacing = 7.0','antenna spacing = 7.5','antenna spacing = 8.0','antenna spacing = 8.5','antenna spacing = 9.0','antenna spacing = 9.5','antenna spacing = 10','Location','best')
+
+% plot capacity vesus spacing for different angular power spectrums
+
+
 
