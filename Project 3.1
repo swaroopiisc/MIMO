@@ -5,7 +5,7 @@ load('LOS_8_8.mat');
 N_real = 401; % Nr of real
 
 Es = 1;
-SNR = 0:12;
+SNR_db = 0:12;
 
 MIMO_Re = 2;
 MIMO_Tr = 2;
@@ -19,63 +19,70 @@ for i = 1:N_real
     
 end
 
-for i = 1:length(SNR)
+for i = 1:length(SNR_db)
     
     %SISO case
     for g = 1:N_real
-        y(g,:) = sqrt(Es)*SISO_H(:,:,g)*bits; % Y = sqrt(ES)*H*S + N
+        y(g,:) = sqrt(Es)*SISO_H(:,:,g).*bits; % Y = sqrt(ES)*H*S + N
         
         %         STOLEN %%%%%
         
-        E_rt = sum(y(g,:).^2)/nr_bits;
-        N0 = E_rt/(10^(SNR(i)/10));
+        E_rt = sum(y(g,:).^2)/length(bits);
+        N0 = E_rt/(10^(SNR_db(i)/10));
         %         %%%%%
         
-        n = randn(size(y(g,:))).*sqrt(N0/2);
-        y(g,:) = y(g,:) + n;
+        n_siso = randn(size(y(g,:))).*sqrt(N0) ;
+        y1(g,:) = y(g,:) + n_siso;
         
-        z(g,:) = SISO_H(:,:,g)'*y(g,:);% Z =h^H*y
+        z(g,:) = SISO_H(:,:,g)'*y1(g,:);% Z =h^H*y
         y_z_bits(g,:) = demod_BPSK(z(g,:));
+        %y_z_bits(g,:) = sign(z(g,:));
         bitErrors(g) = BER(bits,y_z_bits(g,:));
     end
-    SISO_BER(i) = mean(bitErrors)/nr_bits;
+    SISO_BER(i) = sum(bitErrors)/nr_bits;
     
 end
 
-for i = 1:length(SNR)
+for i = 1:length(SNR_db)
     % MIMO case
     sPairs = reshape(bits,2,[]);
     for g = 1:N_real
-        Heff(:,:,g) = ones(MIMO_Re*2,MIMO_Tr);
+        %Heff(:,:,g) = ones(MIMO_Re*2,MIMO_Tr);
         Heff(1:2,1:2,g) = MIMO_H(:,:,g);
-        Heff(3:4,:,g) = [conj(MIMO_H(1,2)), -conj(MIMO_H(1,1)),; conj(MIMO_H(2,2)), -conj(MIMO_H(2,1))];
+        Heff(3:4,:,g) = [conj(MIMO_H(1,2,g)), -conj(MIMO_H(1,1,g)),; conj(MIMO_H(2,2,g)), -conj(MIMO_H(2,1,g))];
         y = sqrt(Es/2)*Heff(:,:,g)*sPairs; % Y = sqrt(ES)*H*S + N
         
         
         %%%% STOLEN!!!!!
         E_rt = sum(y.^2,'all')/nr_bits;
-        N0 = E_rt/(10^(SNR(i)/10));
+        N0 = E_rt/(10^(SNR_db(i)/10));
+%         n1(1:2,1,g) = randn(2,1).*sqrt(N0);
+%         n1(3:4,1,g) = [conj(n1(1,1,g));conj(n1(2,1,g))];
         % ADDED WRONG: should be n = [n1 n2 n3* n4*]
         %%%%%
         
         
-        n = randn(size(y)).*sqrt(N0/2);
-        y = y + n;
-        y_z = Heff(:,:,g)'*y; % Z =h^H*y
-        y_z_demod = demod_BPSK(y_z(:));
-        bitErrors(g) = BER(bits,y_z_demod);
+        n = randn(size(y)).*sqrt(N0);
+        y1 = y + n;
+        y_z = Heff(:,:,g)'*y1; % Z =h^H*y
+        y_z_r = reshape(y_z,1,[]);
+        y_z_demod = demod_BPSK(y_z_r);
         
+        bitErrors(g) = BER(bits,y_z_demod);
+        %bitErrors(g) = numel(find(y_z_demod-bits));
         
     end
-    MIMO_BER(i) = mean(bitErrors)/nr_bits;
+    MIMO_BER(i) = sum(bitErrors)/nr_bits;
     
 end
 
-figure;
+figure(1);
+
+grid on
 set(gca, 'YScale', 'log')
+semilogy(SNR_db,SISO_BER,'-*');
 hold on
-plot(SNR,SISO_BER,'-*');
-plot(SNR,MIMO_BER,'-x');
+semilogy(SNR_db,MIMO_BER,'-x');
 xlabel('SNR')
 ylabel('BER')
 legend('SISO BER', 'MIMO BER');
@@ -224,6 +231,7 @@ end
 function demod_out= demod_BPSK(input)
 iL = length(input);
 demod = ones(1,iL);
+input = real(input);
 for i = 1:iL
     if input(i)> 0;
         demod (1,i)  = 1;
