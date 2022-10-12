@@ -72,6 +72,7 @@ for i = 1:length(SNR)
 end
 
 figure;
+set(gca, 'YScale', 'log')
 hold on
 plot(SNR,SISO_BER,'-*');
 plot(SNR,MIMO_BER,'-x');
