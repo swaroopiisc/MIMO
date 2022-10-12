@@ -149,7 +149,7 @@ for i = 1:N_real;
     Hr_fNorm(i) = norm(Hr(1:MIMO_Re,1:MIMO_Tr,i),"fro");
 end
 
-SUM_Hr_fNorm = sum(Hr_fNorm);
+SUM_Hr_fNorm = sum(Hr_fNorm.^2);
 Hr_norm = Hr.*(1/sqrt(1/N_real*MIMO_Tr*MIMO_Re*SUM_Hr_fNorm));
 
 for i = length(r)
