@@ -76,86 +76,71 @@ for i = 1:length(SNR_db)
     
 end
 
-figure(1);
-
-grid on
-set(gca, 'YScale', 'log')
-semilogy(SNR_db,SISO_BER,'-*');
-hold on
-semilogy(SNR_db,MIMO_BER,'-x');
-xlabel('SNR')
-ylabel('BER')
-legend('SISO BER', 'MIMO BER');
+% figure(1);
+% 
+% grid on
+% set(gca, 'YScale', 'log')
+% semilogy(SNR_db,SISO_BER,'-*');
+% hold on
+% semilogy(SNR_db,MIMO_BER,'-x');
+% xlabel('SNR')
+% ylabel('BER')
+% legend('SISO BER', 'MIMO BER');
 
 %% TASK 2
 
-clc;
-clear all;
-load('LOS_8_8.mat');
-N_real = 401; % Nr of real
-
-Es = 1;
-SNR = 0:12;
-
-MIMO_Re = 2;
-MIMO_Tr = 2;
-nr_bits = 1000;
-bits = 2*randi([0 1], 1,nr_bits)-1; % sent bits
 
 
-for i = 1:N_real
-    MIMO_H = H(1:MIMO_Re,1:MIMO_Tr,1:N_real);
-    
-end
-
-
-for i = 1:length(SNR)
+for i = 1:length(SNR_db)
+   
     
     for g = 1:N_real
         
         [U,S,V] = svd(MIMO_H(:,:,g));
         sMax = S(1,1);
-        y_z(g,:) = sqrt(Es)*sMax*bits;
+        y_z_known(g,:) = sqrt(Es)*sMax*bits;
         
         %STOLEN %%%%%
-        E_rt = sum(y_z(g,:).^2)/nr_bits;
-        N0 = E_rt/(10^(SNR(i)/10));
+        E_rt_known = sum(y_z_known(g,:).^2)/length(bits);
+        N0_known = E_rt_known/(10^(SNR_db(i)/10));
         %%%%
         
-        n = randn(size(y_z(g,:))).*sqrt(N0/2);
-        y_z(g,:) =  y_z(g,:) + n;
+
+
         
-        y_z_bits(g,:) = demod_BPSK(y_z(g,:));
-        channel_known_BER(g) = BER(bits,y_z_bits(g,:));
+        %%%
+        
+        n_known = randn(size(y_z_known(g,:))).*sqrt(N0_known);
+        y_z_known(g,:) =  y_z_known(g,:) + n_known;
+        
+        y_z_bits_known(g,:) = demod_BPSK(y_z_known(g,:));
+        
+        channel_known_BER(g) = BER(bits,y_z_bits_known(g,:));
         
     end
-    Known_Channel_BER(i) = mean(channel_known_BER)/nr_bits;
+    BER_known(i) = mean(channel_known_BER)/nr_bits;
     
 end
+    
 
-figure;
-hold on
-plot(SNR,Known_Channel_BER,'-*');
-xlabel('SNR')
-ylabel('BER')
-legend('Known Channel');
+
+
+
+% 
+% figure(2);
+% 
+% grid on
+% set(gca, 'YScale', 'log')
+% semilogy(SNR_db,BER_known,'-*');
+% xlabel('SNR')
+% ylabel('BER')
+% legend('Known channel BER');
 
 %% TASK 3
 
 
-
-clc;
-clear all;
-load('LOS_8_8.mat');
-N_real = 401; % Nr of real
-
-Es = 1;
-SNR = 6;
-
-MIMO_Re = 2;
-MIMO_Tr = 2;
+SNR_FIX = 6;
 nr_bits = 1000;
-bits = 2*randi([0 1], 1,nr_bits)-1; % sent bits
 r = 0.5:0.1:1;
 
 Hr = 1/sqrt(2)*(randn(MIMO_Re,MIMO_Tr,N_real)+1i*randn(MIMO_Re,MIMO_Tr,N_real));
@@ -186,7 +171,7 @@ for i = length(r)
         
         %%%% STOLEN!!!!!
         E_rt = sum(y.^2,'all')/nr_bits;
-        N0 = E_rt/(10^(SNR/10));
+        N0 = E_rt/(10^(SNR_FIX/10));
         % ADDED WRONG: should be n = [n1 n2 n3* n4*]
         %%%%%
         
@@ -203,13 +188,31 @@ for i = length(r)
 end
 
 
-figure;
+figure(1);
+
+grid on
+set(gca, 'YScale', 'log')
+semilogy(SNR_db,SISO_BER,'-*');
 hold on
-plot(r,kron_BER,'-*');
-% plot(SNR,MIMO_BER,'-x');
+semilogy(SNR_db,MIMO_BER,'-x');
+semilogy(SNR_db,BER_known,'-o');
+
 xlabel('SNR')
 ylabel('BER')
-legend('SISO BER', 'MIMO BER');
+legend('SISO BER', 'MIMO BER', 'Channel known BER');
+
+
+figure(2);
+
+grid on
+set(gca, 'YScale', 'log')
+semilogy(r,kron_BER);
+xlabel('r')
+ylabel('BER')
+legend('kron');
+
+
+
 
 
 
@@ -241,7 +244,6 @@ for i = 1:iL
     demod_out = demod;
 end
 end
-
 
 
 
