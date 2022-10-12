@@ -1,3 +1,4 @@
+%% TASK 1
 clc;
 clear all;
 load('LOS_8_8.mat');
@@ -25,9 +26,7 @@ for i = 1:length(SNR)
         y(g,:) = sqrt(Es)*SISO_H(:,:,g)*bits; % Y = sqrt(ES)*H*S + N
           
 %         STOLEN %%%%% 
-      
-        y(b,:) = noise + y_no_noise(b,:);
-        
+
           E_rt = sum(y(g,:).^2)/nr_bits;
           N0 = E_rt/(10^(SNR(i)/10));
 %         %%%%%
@@ -71,6 +70,7 @@ for i = 1:length(SNR)
            MIMO_BER(i) = mean(bitErrors)/nr_bits;
 
 end
+
 figure;
 hold on
 plot(SNR,SISO_BER,'-*');
@@ -79,27 +79,55 @@ xlabel('SNR')
 ylabel('BER')
 legend('SISO BER', 'MIMO BER');
 
-function ber = BER(seq, res)
-li = length(seq);
-err = 0;
-    for i = 1:li
-        if seq(i) ~= res(i)
-        err = err + 1;
-        end
+%% TASK 2
+
+clc;
+clear all;
+load('LOS_8_8.mat');
+N_real = 401; % Nr of real
+
+Es = 1;
+SNR = 0:12;
+
+MIMO_Re = 2;
+MIMO_Tr = 2;
+nr_bits = 1000;
+bits = 2*randi([0 1], 1,nr_bits)-1; % sent bits
+
+
+for i = 1:N_real
+    MIMO_H = H(1:MIMO_Re,1:MIMO_Tr,1:N_real);
+
+end
+
+
+for i = 1:length(SNR)
+    
+    for g = 1:N_real
+        
+        [U,S,V] = svd(MIMO_H(:,:,g));
+        sMax = S(1,1);
+        y_z(g,:) = sqrt(Es)*sMax*bits;
+        
+        %STOLEN %%%%%
+        E_rt = sum(y_z(g,:).^2)/nr_bits;
+        N0 = E_rt/(10^(SNR(i)/10));
+        %%%%
+        
+        n = randn(size(y_z(g,:))).*sqrt(N0/2);
+        y_z(g,:) =  y_z(g,:) + n;
+        
+        y_z_bits(g,:) = demod_BPSK(y_z(g,:));
+        channel_known_BER(g) = BER(bits,y_z_bits(g,:));
+        
     end
-    ber = err/li;
+    Known_Channel_BER(i) = mean(channel_known_BER)/nr_bits;
+
 end
 
-
-function demod_out= demod_BPSK(input)
-    iL = length(input);
-    demod = ones(1,iL);
-    for i = 1:iL
-        if input(i)> 0;
-            demod (1,i)  = 1;
-        else       
-            demod (1,i)  = -1;
-        end  
-    demod_out = demod;
-end
-end
+figure;
+hold on
+plot(SNR,Known_Channel_BER,'-*');
+xlabel('SNR')
+ylabel('BER')
+legend('Known Channel');
