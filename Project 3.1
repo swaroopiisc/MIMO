@@ -9,7 +9,7 @@ SNR_db = 0:12;
 
 MIMO_Re = 2;
 MIMO_Tr = 2;
-nr_bits = 1000;
+nr_bits = 1300;
 bits = 2*randi([0 1], 1,nr_bits)-1; % sent bits
 
 
@@ -90,9 +90,7 @@ end
 %% TASK 2
 
 
-
 for i = 1:length(SNR_db)
-   
     
     for g = 1:N_real
         
@@ -139,54 +137,53 @@ end
 %% TASK 3
 
 
-SNR_FIX = 6;
-nr_bits = 1000;
-r = 0.5:0.1:1;
+SNR_FIX = 5;
+r = 0:0.1:1;
 
 Hr = 1/sqrt(2)*(randn(MIMO_Re,MIMO_Tr,N_real)+1i*randn(MIMO_Re,MIMO_Tr,N_real));
 
-for i = 1:N_real;
+for i = 1:N_real
     Hr_fNorm(i) = norm(Hr(1:MIMO_Re,1:MIMO_Tr,i),"fro");
 end
 
 SUM_Hr_fNorm = sum(Hr_fNorm.^2);
 Hr_norm = Hr.*(1/sqrt(SUM_Hr_fNorm/(N_real*MIMO_Tr*MIMO_Re)));
 
-for i = length(r)
+for i = 1:length(r)
     
     Rt = [1, r(i); r(i), 1];
     Rr = Rt;
     
-    MIMO_H = sqrt(Rr).*Hr_norm.*sqrt(Rt);
+    MIMO_H_corr = Rr^(1/2).*Hr_norm.*Rt^(1/2);
     
     
-    % Kron case
     sPairs = reshape(bits,2,[]);
+    
     for g = 1:N_real
-        Heff(:,:,g) = ones(MIMO_Re*2,MIMO_Tr);
-        Heff(1:2,1:2,g) = MIMO_H(:,:,g);
-        Heff(3:4,:,g) = [conj(MIMO_H(1,2)), -conj(MIMO_H(1,1)),; conj(MIMO_H(2,2)), -conj(MIMO_H(2,1))];
-        y = sqrt(Es/2)*Heff(:,:,g)*sPairs; % Y = sqrt(ES)*H*S + N
+
+        Heff(1:2,1:2,g) = MIMO_H_corr(:,:,g);
+        Heff(3:4,:,g) = [conj(MIMO_H_corr(1,2,g)), -conj(MIMO_H_corr(1,1,g)),; conj(MIMO_H_corr(2,2,g)), -conj(MIMO_H_corr(2,1,g))];
+        y_corr = sqrt(Es/2)*Heff(:,:,g)*sPairs; % Y = sqrt(ES)*H*S + N
         
         
         %%%% STOLEN!!!!!
-        E_rt = sum(y.^2,'all')/nr_bits;
-        N0 = E_rt/(10^(SNR_FIX/10));
-        % ADDED WRONG: should be n = [n1 n2 n3* n4*]
-        %%%%%
+        E_rt_corr = sum(y_corr.^2,'all')/nr_bits;
+        N0 = E_rt_corr/(10^(SNR_FIX/10));
+
+        n_corr = randn(size(y_corr)).*sqrt(N0);
+        y1_corr = y_corr + n_corr;
+        y_z_corr = Heff(:,:,g)'*y1_corr; % Z =h^H*y
+        y_z_r_corr = reshape(y_z_corr,1,[]);
+        y_z_demod_corr = demod_BPSK(y_z_r_corr);
         
-        n = randn(size(y)).*sqrt(N0/2);
-        y = y + n;
-        y_z = Heff(:,:,g)'*y; % Z =h^H*y
-        y_z_demod = demod_BPSK(y_z(:));
-        bitErrors(g) = BER(bits,y_z_demod);
-        
+        bitErrors_corr(g) = BER(bits,y_z_demod_corr);
+
         
     end
-    kron_BER(i) = mean(bitErrors)/nr_bits;
-
+    corr_BER(i) = sum(bitErrors_corr)/nr_bits;
+    
 end
-
+    
 
 figure(1);
 
@@ -196,27 +193,18 @@ semilogy(SNR_db,SISO_BER,'-*');
 hold on
 semilogy(SNR_db,MIMO_BER,'-x');
 semilogy(SNR_db,BER_known,'-o');
-
 xlabel('SNR')
 ylabel('BER')
 legend('SISO BER', 'MIMO BER', 'Channel known BER');
 
 
 figure(2);
-
 grid on
 set(gca, 'YScale', 'log')
-semilogy(r,kron_BER);
+plot(r,corr_BER,'-x');
 xlabel('r')
 ylabel('BER')
 legend('kron');
-
-
-
-
-
-
-
 
 
 function ber = BER(seq, res)
@@ -236,7 +224,7 @@ iL = length(input);
 demod = ones(1,iL);
 input = real(input);
 for i = 1:iL
-    if input(i)> 0;
+    if input(i)> 0
         demod (1,i)  = 1;
     else
         demod (1,i)  = -1;
@@ -244,7 +232,6 @@ for i = 1:iL
     demod_out = demod;
 end
 end
-
 
 
 
