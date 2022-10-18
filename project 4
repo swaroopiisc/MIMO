@@ -163,3 +163,108 @@ semilogy(SNRdb,BER3/Nbits,'x--');
 hold off
 legend('Eigen Value 1','Eigen Value 2','Eigen Value 3')
 toc
+%% Task 3
+%. Assume that BPSK is used as modulation. Use the first 2 transmit and first 2 receive elements from the
+%MIMO measurement “LOS 8 8.mat”. Assuming uncoded Spatial Multiplexing operation, implement
+%the ZF receiver, the MMSE receiver, and the ML receiver, respectively. Simulate the BER for different
+%SNRs (e.g., 0-40 dB) and comment on the performances. What is the main drawback of the receiver
+%with better performance?
+
+
+clc;
+clear all;
+tic;
+load('LOS_8_8.mat');
+
+M = 2;
+Mt = M;
+Mr = M;
+Nbits = 50;   % Number of bits
+
+
+
+
+N=100;
+H2 = H(1:2,1:2,1:N);
+for i=1:N
+    fronorm2(i) = norm(H2(1:2,1:2,i),"fro");
+    %H_norm = H/sqrt(fronorm(i)/(1.*Mt.*Mr));
+end
+sum_fronorm2 = sum(fronorm2);
+H_norm2 = H2/sqrt(sum_fronorm2/(N.*Mt.*Mr));
+
+
+bits = round(rand(M,Nbits));     % bit generation
+bits = bits.*2 - 1;   % BPSK modulation
+
+for i = 1:M
+    Sigpower(i,1) = (1/M).*sum(bits(i,:).^2)/length(bits(i,:));
+end
+SNRdb = 0:12;  % 0-12 dB SNR
+SNR = 10.^(SNRdb./10);   % Linear SNR
+
+No = Sigpower(1)./SNR;  % Noise variance
+
+
+% ZF reciver!
+
+for i = 1:length(No)
+    noise_values(:,:) = randn(M,Nbits).*sqrt(No(i));
+    for R = 1:N
+        
+        for ii = 1:Nbits
+            y(:,ii) =(H_norm2(:,:,R)*bits(:,ii)) + noise_values(:,ii);
+            z(:,ii) = pinv(H_norm2(:,:,R))*y(:,ii);
+            
+            
+        end
+        BER1(R) = numel(find(sign(real(z(1,:)))-bits(1,:)));
+        BER2(R) = numel(find(sign(real(z(2,:)))-bits(2,:)));
+    end
+    BER1_mean(i) = mean(BER1);
+    BER2_mean(i) = mean(BER2);
+    
+    BERavg_ZF(i) = mean(BER1_mean(i)+BER2_mean(i));
+    
+end
+
+
+% MMSE
+for i = 1:length(No)
+    noise_values(:,:) = randn(M,Nbits).*sqrt(No(i));
+    for R = 1:N
+        for ii = 1:Nbits
+            
+            G(:,:,ii) = sqrt(Mt)*inv(H_norm2(:,:,R)'*H_norm2(:,:,R)+Mt*No(i).*eye(2))*H_norm2(:,:,R)';
+            y(:,ii) =(H_norm2(:,:,R)*bits(:,ii)) + noise_values(:,ii);
+            z(:,ii) = G(:,:,R)*y(:,ii);
+        end
+        BER1(R) = numel(find(sign(real(z(1,:)))-bits(1,:)));
+        BER2(R) = numel(find(sign(real(z(2,:)))-bits(2,:)));
+    end
+    
+    BER1_mean(i) = mean(BER1);
+    BER2_mean(i) = mean(BER2);
+    
+    BERavg_MMSE(i) = mean(BER1_mean(i)+BER2_mean(i));
+    
+end
+
+
+ %ML
+for i = 1:length(No)
+    noise_values(:,:) = randn(M,Nbits).*sqrt(No(i));
+    for R = 1:N
+        for ii = 1:Nbits
+            
+            y(:,ii) =(sqrt(1/Mt)*H_norm2(:,:,R)*bits(:,ii)) + noise_values(:,ii);
+            s_line = y(:,ii) - sqrt(1/Mt)*H_norm2(:,:,R)*[1;-1];
+            
+            s_line_norm = norm(s_line,'fro');
+            s_hat(ii) = min(s_line_norm);
+            
+        end
+    end
+    
+end
+
