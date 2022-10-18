@@ -146,3 +146,33 @@ xlabel('SNR')
 ylabel('BER')
 title('BER comparision for H = I')
 toc
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Task 2
+clear all;
+clc;
+
+load('LOS 8 8.mat');
+
+H_mimo = H(1:2,1:2,:);
+N=401 %No of realisations
+
+M=2;
+Mt=M;
+Mr=M;
+Nbits = 1e5;
+bits = randn(2,Nbits);
+
+for i = 1:M
+    Sigpower(i,1) = sum(bits(i,:).^2)/length(bits(i,:));
+end
+
+SNRdb = [0:1:5,10:5:40];  % 0-12 dB SNR
+SNR = 10.^(SNRdb./10);   % Linear SNR
+
+No = Sigpower(1)./SNR;  % Noise variance 
+
+for i = 1:length(No)
+   noise_values(:,:) = randn(2,Nbits)*sqrt(No(i));
+   
+end
