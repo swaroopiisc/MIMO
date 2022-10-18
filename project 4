@@ -1,1 +1,118 @@
+clear all;
+clc;
+tic
+%% Task 1
+M=3;
+Mr = M;  % No of receive antennas
+Mt = M;  % No of transmit antennas
+N=100; %No of channel realisations
+Hw=1/sqrt(2)*(randn(Mr,Mt,N)+1j*randn(Mr,Mt,N));
 
+for i = 1:N
+    fronorm(i) = norm(Hw(:,:,i),"fro").^2;
+    H_norm(:,:,i) = Hw(:,:,i)./sqrt(fronorm(i)/(Mt*Mr));
+end
+Nbits = 5*10000;   % Number of bits
+bits = round(rand(3,Nbits));     % bit generation
+bits = bits.*2 - 1;   % BPSK modulation
+
+for i = 1:M
+    Sigpower(i,1) = (1/3).*sum(bits(i,:).^2)/length(bits(i,:));
+end
+
+SNRdb = 0:12;  % 0-12 dB SNR
+SNR = 10.^(SNRdb./10);   % Linear SNR
+
+No = Sigpower(1)./SNR;  % Noise variance 
+
+for i = 1:length(No)
+    noise_values(:,:) = randn(3,Nbits).*sqrt(No(i));
+    for iii = 1:N 
+        [U S V] = svd(H_norm(:,:,iii));
+        for ii = 1:Nbits            
+            y(:,ii) = (1/sqrt(Mt)).*(H_norm(:,:,iii)*V*bits(:,ii)) + noise_values(:,ii);
+            z(:,ii) = U'*y(:,ii);
+        end
+        BER1(iii) = numel(find(sign(real(z(1,:)))-bits(1,:)));
+        BER2(iii) = numel(find(sign(real(z(2,:)))-bits(2,:)));
+        BER3(iii) = numel(find(sign(real(z(3,:)))-bits(3,:)));
+    end
+    BER1_mean(i) = mean(BER1);
+    BER2_mean(i) = mean(BER2);
+    BER3_mean(i) = mean(BER3);
+    BERavg(i) = (BER1_mean(i)+BER2_mean(i)+BER3_mean(i))/3;
+end
+
+figure(1)
+grid on
+set(gca, 'YScale', 'log')
+semilogy(SNRdb,BERavg/Nbits,'o--');
+
+figure(2)
+grid on
+set(gca, 'YScale', 'log')
+semilogy(SNRdb,BER1_mean/Nbits,'o--');
+hold on
+semilogy(SNRdb,BER2_mean/Nbits,'*--');
+semilogy(SNRdb,BER3_mean/Nbits,'x--');
+hold off
+legend('Eigen Value 1','Eigen Value 2','Eigen Value 3')
+toc
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+clear all;
+clc;
+tic
+%% Task 1
+M=3;
+Mr = M;  % No of receive antennas
+Mt = M;  % No of transmit antennas
+H_I = eye(3);
+
+fronorm_i  = norm(H_I,"fro").^2;
+
+H_I_norm = H_I/sqrt(fronorm_i/(Mt*Mr));
+
+Nbits = 5*10000;   % Number of bits
+bits = round(rand(3,Nbits));     % bit generation
+bits = bits.*2 - 1;   % BPSK modulation
+
+for i = 1:M
+    Sigpower(i,1) = (1/3).*sum(bits(i,:).^2)/length(bits(i,:));
+end
+SNRdb = 0:12;  % 0-12 dB SNR
+SNR = 10.^(SNRdb./10);   % Linear SNR
+
+No = Sigpower(1)./SNR;  % Noise variance 
+
+for i = 1:length(No)
+    noise_values(:,:) = randn(3,Nbits).*sqrt(No(i));
+    [U S V] = svd(H_I_norm);
+    for ii = 1:Nbits            
+        y(:,ii) = (1/sqrt(Mt)).*(H_I_norm*V*bits(:,ii)) + noise_values(:,ii);
+        z(:,ii) = U'*y(:,ii);
+    end
+    BER1(i) = numel(find(sign(real(z(1,:)))-bits(1,:)));
+    BER2(i) = numel(find(sign(real(z(2,:)))-bits(2,:)));
+    BER3(i) = numel(find(sign(real(z(3,:)))-bits(3,:)));
+    BERavg(i) = (BER1(i)+BER2(i)+BER3(i))/3;
+end
+
+figure(3)
+grid on
+set(gca, 'YScale', 'log')
+semilogy(SNRdb,BERavg/Nbits,'o--');
+
+figure(4)
+grid on
+set(gca, 'YScale', 'log')
+semilogy(SNRdb,BER1/Nbits,'o--');
+hold on
+semilogy(SNRdb,BER2/Nbits,'*--');
+semilogy(SNRdb,BER3/Nbits,'x--');
+hold off
+legend('Eigen Value 1','Eigen Value 2','Eigen Value 3')
+toc
