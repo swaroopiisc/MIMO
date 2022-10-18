@@ -1,0 +1,148 @@
+clear all;
+clc;
+tic
+
+% Task 1-1
+M=3;
+Mr = M;  % No of receive antennas
+Mt = M;  % No of transmit antennas
+
+N=100; %No of channel realisations
+
+Hw=1/sqrt(2)*(randn(Mr,Mt,N)+1j*randn(Mr,Mt,N));
+
+Mt_siso = 1;
+Mr_siso = 1;
+
+H_siso = Hw(1,1,:);
+
+for i = 1:N
+    fronorm(i) = norm(Hw(:,:,i),"fro").^2;
+    H_norm(:,:,i) = Hw(:,:,i)./sqrt(fronorm(i)/(Mt*Mr));
+end
+
+for i = 1:N
+    fronorm_siso(i) = norm(H_siso(:,:,i),"fro").^2;
+    H_norm_siso(:,:,i) = H_siso(:,:,i)./sqrt(fronorm_siso(i)/(Mt_siso*Mr_siso));
+end
+
+Nbits = 1e6;   % Number of bits
+bits = round(rand(3,Nbits));     % bit generation
+bits = bits.*2 - 1;   % BPSK modulation
+
+bits_siso = round(rand(1,Nbits));     % bit generation
+bits_siso = bits_siso.*2 - 1;   % BPSK modulation
+
+for i = 1:M
+    Sigpower(i,1) = sum(bits(i,:).^2)/length(bits(i,:));
+end
+
+SNRdb = 0:12;  % 0-12 dB SNR
+SNR = 10.^(SNRdb./10);   % Linear SNR
+
+No = Sigpower(1)./SNR;  % Noise variance 
+
+for i = 1:length(No)
+    noise_values(:,:) = randn(3,Nbits).*sqrt(No(i));
+    noise_values_siso = randn(1,Nbits).*sqrt(No(i));
+    for iii = 1:N 
+        [U, S, V] = svd(H_norm(:,:,iii));
+        [U_siso, S_siso, V_siso] = svd(H_norm_siso(:,:,iii));
+        for ii = 1:Nbits            
+            y(:,ii) = (1/sqrt(Mt)).*(H_norm(:,:,iii)*V*bits(:,ii)) + noise_values(:,ii);
+            y_siso(:,ii) = H_norm_siso(:,:,iii)*V_siso*bits_siso(:,ii) + noise_values_siso(:,ii);
+            z(:,ii) = U'*y(:,ii);
+            z_siso(:,ii) = U_siso'*y_siso(:,ii);
+        end
+        BER1(iii) = numel(find(sign(real(z(1,:)))-bits(1,:)));
+        BER2(iii) = numel(find(sign(real(z(2,:)))-bits(2,:)));
+        BER3(iii) = numel(find(sign(real(z(3,:)))-bits(3,:)));
+        BER_siso(iii) = numel(find(sign(real(z_siso(1,:)))-bits_siso(1,:)));
+    end
+    BER1_mean(i) = mean(BER1);
+    BER2_mean(i) = mean(BER2);
+    BER3_mean(i) = mean(BER3);
+    BERavg(i) = (BER1_mean(i)+BER2_mean(i)+BER3_mean(i))/3;
+    BER_siso_avg(i) = mean(BER_siso);
+end
+
+figure(1)
+grid on
+set(gca, 'YScale', 'log')
+semilogy(SNRdb,BERavg/Nbits);
+hold on
+semilogy(SNRdb,BER1_mean/Nbits);
+semilogy(SNRdb,BER2_mean/Nbits);
+semilogy(SNRdb,BER3_mean/Nbits);
+semilogy(SNRdb,BER_siso_avg/Nbits);
+hold off
+legend('Average BER','Eigen Value 1','Eigen Value 2','Eigen Value 3','SISO')
+xlabel('SNR')
+ylabel('BER')
+title('BER comparision for H = Hw')
+
+%%
+
+M=3;
+Mr = M;  % No of receive antennas
+Mt = M;  % No of transmit antennas
+H_I = eye(3);
+
+fronorm_i  = norm(H_I,"fro").^2;
+
+H_I_norm = H_I/sqrt(fronorm_i/(Mt*Mr));
+
+M=1;
+H_I_siso = eye(1);
+fronorm_i_siso = norm(H_I_siso,"fro").^2;
+
+H_I_norm_siso = H_I_siso/sqrt(fronorm_i_siso);
+
+Nbits = 1e6;   % Number of bits
+bits_i = round(rand(3,Nbits));     % bit generation
+bits_i = bits_i.*2 - 1;   % BPSK modulation
+
+bits_siso_i = round(rand(1,Nbits));     % bit generation
+bits_siso_i = bits_siso_i.*2 - 1;   % BPSK modulation
+
+for i = 1:M
+    Sigpower(i,1) = sum(bits_i(i,:).^2)/length(bits_i(i,:));
+end
+SNRdb = 0:12;  % 0-12 dB SNR
+SNR = 10.^(SNRdb./10);   % Linear SNR
+
+No = Sigpower(1)./SNR;  % Noise variance 
+
+for i = 1:length(No)
+    noise_values_i(:,:) = randn(3,Nbits).*sqrt(No(i));
+    noise_values_siso_i(:,:) = randn(1,Nbits).*sqrt(No(i));
+    [U_I, S_I, V_I] = svd(H_I_norm);
+    [U_siso_i, S_siso_i, V_siso_i] = svd(H_I_norm_siso);
+    for ii = 1:Nbits            
+        y_i(:,ii) = (1/sqrt(Mt)).*(H_I_norm*V_I*bits_i(:,ii)) + noise_values_i(:,ii);
+        y_siso_i(:,ii) = (H_I_norm_siso*V_siso_i*bits_siso_i(:,ii)) + noise_values_siso_i(:,ii);
+        z_i(:,ii) = U_I'*y_i(:,ii);
+        z_siso_i(:,ii) = U_siso_i'*y_siso_i(:,ii);
+    end
+    BER1_i(i) = numel(find(sign(real(z_i(1,:)))-bits_i(1,:)));
+    BER2_i(i) = numel(find(sign(real(z_i(2,:)))-bits_i(2,:)));
+    BER3_i(i) = numel(find(sign(real(z_i(3,:)))-bits_i(3,:)));
+    BERavg_i(i) = (BER1_i(i)+BER2_i(i)+BER3_i(i))/3;
+    BER_siso_i(i) = numel(find(sign(real(z_siso_i(1,:)))-bits_siso_i(1,:)));
+end
+
+figure(2)
+grid on
+set(gca, 'YScale', 'log')
+semilogy(SNRdb,BERavg_i/Nbits);
+hold on
+semilogy(SNRdb,BER1_i/Nbits);
+semilogy(SNRdb,BER2_i/Nbits);
+semilogy(SNRdb,BER3_i/Nbits);
+semilogy(SNRdb,BER_siso_i/Nbits);
+hold off
+legend('Average BER','Eigen Value 1','Eigen Value 2','Eigen Value 3','SISO')
+xlabel('SNR')
+ylabel('BER')
+title('BER comparision for H = I')
+toc
