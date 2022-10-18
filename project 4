@@ -61,6 +61,53 @@ toc
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+M=3;
+Mr = M;  % No of receive antennas
+Mt = M;  % No of transmit antennas
+N=100; %No of channel realisations
+Hw=1/sqrt(2)*(randn(Mr,Mt,N)+1j*randn(Mr,Mt,N));
+Mt_siso = 1;
+Mr_siso = 1;
+H_siso = Hw(1,1,:);
+
+Nbits = 5*10000;
+
+
+
+for i = 1:N
+    fronorm_siso(i) = norm(H_siso(:,:,i),"fro").^2;
+    H_norm_siso(:,:,i) = H_siso(:,:,i)./sqrt(fronorm_siso(i)/(Mt_siso*Mr_siso));
+end
+
+bits_siso = round(rand(1,Nbits));     % bit generation
+bits_siso = bits_siso.*2 - 1;   % BPSK modulation
+
+for i = 1:M
+    Sigpower(i,1) = (1/3).*sum(bits(i,:).^2)/length(bits(i,:));
+end
+
+SNRdb = 0:12;  % 0-12 dB SNR
+SNR = 10.^(SNRdb./10);   % Linear SNR
+
+No = Sigpower(1)./SNR;  % Noise variance 
+
+for i = 1:length(No)
+    noise_values_siso = randn(1,Nbits).*sqrt(No(i));
+    for iii = 1:N
+        [U_siso S_siso V_siso] = svd(H_norm_siso(:,:,iii));
+        for ii = 1:Nbits
+            y_siso(:,ii) = H_norm_siso(:,:,iii)*V_siso*bits_siso(:,ii) + noise_values_siso(:,ii);
+            z_siso(:,ii) = U_siso'*y(:,ii);
+        end
+        BER_siso(iii) = numel(find(sign(real(z_siso(1,:)))-bits_siso(1,:)));
+    end
+    BER_siso_mean(i) = mean(BER_siso);
+    BER_siso_avg(i) = BER_siso_mean(i);
+end
+
+figure(3)
+set(gca, 'YScale', 'log')
+semilogy(SNRdb,BER_siso_avg,'--o')
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 clear all;
@@ -101,12 +148,12 @@ for i = 1:length(No)
     BERavg(i) = (BER1(i)+BER2(i)+BER3(i))/3;
 end
 
-figure(3)
+figure(4)
 grid on
 set(gca, 'YScale', 'log')
 semilogy(SNRdb,BERavg/Nbits,'o--');
 
-figure(4)
+figure(5)
 grid on
 set(gca, 'YScale', 'log')
 semilogy(SNRdb,BER1/Nbits,'o--');
