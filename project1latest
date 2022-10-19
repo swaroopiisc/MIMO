@@ -1,0 +1,401 @@
+clear all;
+clc;
+
+load('LOS_8_8.mat')
+%% M=1
+
+M=1;
+Mt = M;
+Mr = Mt ;
+
+N=401;
+N_vec = 1:1:401;
+H1 = H(1:1,1:1,1:401);
+
+for i=1:N
+    fronorm1(i) = norm(H1(1:1,1:1,i),"fro");
+end
+sum_fronorm1 = sum(fronorm1.*fronorm1);
+H_norm1 = H1/sqrt(sum_fronorm1/(N.*Mt.*Mr));
+
+for i=1:N
+    eigenvalues1(:,i) = eig(H_norm1(1:1,1:1,i)*H_norm1(1:1,1:1,i)');
+end
+abs_eigen1 = abs(eigenvalues1);
+sorted_eigen1 = sort(abs_eigen1);
+%part_of_level1 = Mt./(sorted_eigen1);
+
+SNRdb = 0:25;
+SNR = 10.^(SNRdb/10);
+
+for j=1:length(SNR)
+    inside_cap1 = 1 + (SNR(j)/Mt).*abs_eigen1;
+    for i=1:N
+        capacity1(j,i) = sum(log2(inside_cap1(:,i)));
+    end
+    ergodic_capacity1_unknown(j) = sum(capacity1(j,:))/N;
+    levels1(:,:,j) = Mt./(SNR(j).*sorted_eigen1);
+    for i=1:N
+        gammas1(:,i) = waterfill2(levels1(:,i,j),Mt);
+    end
+    for i=1:N
+        capacity11(j,i) = sum(log2(1+gammas1(:,i)./levels1(:,i,j)));
+    end
+    ergodic_capacity1_known(j) = sum(capacity11(j,:))/N;
+end
+
+%% M=2
+
+M=2;
+Mt = M;
+Mr = Mt ;
+
+N=401;
+N_vec = 1:1:401;
+H2 = H(1:2,1:2,1:401);
+
+for i=1:N
+    fronorm2(i) = norm(H2(1:2,1:2,i),"fro");
+end
+sum_fronorm2 = sum(fronorm2.*fronorm2);
+H_norm2 = H2/sqrt(sum_fronorm2/(N.*Mt.*Mr));
+
+for i=1:N
+    eigenvalues2(:,i) = eig(H_norm2(1:2,1:2,i)*H_norm2(1:2,1:2,i)');
+end
+abs_eigen2 = abs(eigenvalues2);
+sorted_eigen2 = sort(abs_eigen2);
+%part_of_level1 = Mt./(sorted_eigen1);
+
+for j=1:length(SNR)
+    inside_cap2 = 1 + (SNR(j)/Mt).*abs_eigen2;
+    for i=1:N
+        capacity2(j,i) = sum(log2(inside_cap2(:,i)));
+    end
+    ergodic_capacity2_unknown(j) = sum(capacity2(j,:))/N;
+    levels2(:,:,j) = Mt./(SNR(j).*sorted_eigen2);
+    for i=1:N
+        gammas2(:,i) = waterfill2(levels2(:,i,j),Mt);
+    end
+    for i=1:N
+        capacity22(j,i) = sum(log2(1+gammas2(:,i)./levels2(:,i,j)));
+    end
+    ergodic_capacity2_known(j) = sum(capacity22(j,:))/N;
+end
+
+%% M=4
+
+M=4;
+Mt = M;
+Mr = Mt ;
+
+N=401;
+N_vec = 1:1:401;
+H4 = H(1:4,1:4,1:401);
+
+for i=1:N
+    fronorm4(i) = norm(H4(1:4,1:4,i),"fro");
+end
+sum_fronorm4 = sum(fronorm4.*fronorm4);
+H_norm4 = H4/sqrt(sum_fronorm4/(N.*Mt.*Mr));
+
+for i=1:N
+    eigenvalues4(:,i) = eig(H_norm4(1:4,1:4,i)*H_norm4(1:4,1:4,i)');
+end
+abs_eigen4 = abs(eigenvalues4);
+sorted_eigen4 = sort(abs_eigen4);
+%part_of_level1 = Mt./(sorted_eigen1);
+
+for j=1:length(SNR)
+    inside_cap4 = 1 + (SNR(j)/Mt).*abs_eigen4;
+    for i=1:N
+        capacity4(j,i) = sum(log2(inside_cap4(:,i)));
+    end
+    ergodic_capacity4_unknown(j) = sum(capacity4(j,:))/N;
+    levels4(:,:,j) = Mt./(SNR(j).*sorted_eigen4);
+    for i=1:N
+        gammas4(:,i) = waterfill2(levels4(:,i,j),Mt);
+    end
+    for i=1:N
+        capacity44(j,i) = sum(log2(1+gammas4(:,i)./levels4(:,i,j)));
+    end
+    ergodic_capacity4_known(j) = sum(capacity44(j,:))/N;
+end
+
+%% M=8
+
+M=8;
+Mt = M;
+Mr = Mt ;
+
+N=401;
+N_vec = 1:1:401;
+H8 = H(1:8,1:8,1:401);
+
+for i=1:N
+    fronorm8(i) = norm(H8(1:8,1:8,i),"fro");
+end
+sum_fronorm8 = sum(fronorm8.*fronorm8);
+H_norm8 = H8/sqrt(sum_fronorm8/(N.*Mt.*Mr));
+
+for i=1:N
+    eigenvalues8(:,i) = eig(H_norm8(1:8,1:8,i)*H_norm8(1:8,1:8,i)');
+end
+abs_eigen8 = abs(eigenvalues8);
+sorted_eigen8 = sort(abs_eigen8);
+%part_of_level1 = Mt./(sorted_eigen1);
+
+for j=1:length(SNR)
+    inside_cap8 = 1 + (SNR(j)/Mt).*abs_eigen8;
+    for i=1:N
+        capacity8(j,i) = sum(log2(inside_cap8(:,i)));
+    end
+    ergodic_capacity8_unknown(j) = sum(capacity8(j,:))/N;
+    levels8(:,:,j) = Mt./(SNR(j).*sorted_eigen8);
+    for i=1:N
+        gammas8(:,i) = waterfill2(levels8(:,i,j),Mt);
+    end
+    for i=1:N
+        capacity88(j,i) = sum(log2(1+gammas8(:,i)./levels8(:,i,j)));
+    end
+    ergodic_capacity8_known(j) = sum(capacity88(j,:))/N;
+end
+
+%% Plotting figures
+figure(1)
+hold on
+plot(SNRdb,ergodic_capacity1_unknown,'r--');
+plot(SNRdb,ergodic_capacity1_known,'k-');
+
+plot(SNRdb,ergodic_capacity2_unknown,'g--');
+plot(SNRdb,ergodic_capacity2_known,'g-');
+
+plot(SNRdb,ergodic_capacity4_unknown,'b--');
+plot(SNRdb,ergodic_capacity4_known,'b-');
+
+plot(SNRdb,ergodic_capacity8_unknown,'m--');
+plot(SNRdb,ergodic_capacity8_known,'m-');
+xlabel('SNR in dB');
+ylabel('Capacity in bits/s/Hz');
+
+legend('Unknown 1x1','known1x1','Unknown 2x2','known 2x2','Unknown 4x4','known 4x4','Unknown 8x8','known 8x8','Location','best');
+hold off
+title('Ergodic capacities with channel known and unknown vs SNR')
+
+figure(2)
+subplot(2,2,1)
+plot(SNRdb,ergodic_capacity1_unknown,'r--');
+hold on
+plot(SNRdb,ergodic_capacity1_known,'k-');
+hold off
+xlabel('SNR in dB');
+ylabel('Capacity in bits/s/Hz');
+
+subplot(2,2,2)
+plot(SNRdb,ergodic_capacity2_unknown,'g--');
+hold on
+plot(SNRdb,ergodic_capacity2_known,'g-');
+hold off
+xlabel('SNR in dB');
+ylabel('Capacity in bits/s/Hz');
+
+subplot(2,2,3)
+plot(SNRdb,ergodic_capacity4_unknown,'b--');
+hold on
+plot(SNRdb,ergodic_capacity4_known,'b-');
+hold off
+xlabel('SNR in dB');
+ylabel('Capacity in bits/s/Hz');
+
+subplot(2,2,4)
+plot(SNRdb,ergodic_capacity8_unknown,'m--');
+hold on
+plot(SNRdb,ergodic_capacity8_known,'m-');
+hold off
+xlabel('SNR in dB');
+ylabel('Capacity in bits/s/Hz');
+
+xlabel('SNR in dB');
+ylabel('Capacity in bits/s/Hz');
+
+%% 2nd part
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% For SISO 
+N1 = 1001;
+H_part2 = 1/sqrt(2)*(randn(4,4,N1)+1i*randn(4,4,N1));
+H_siso = H_part2(1,1,:);
+
+for i = 1:N1
+    fronorm_siso(i) = norm(H_siso(1,1,i),"fro");
+end
+sum_fronormsiso = sum(fronorm_siso.*fronorm_siso);
+H_normsiso = H_siso/sqrt(sum_fronormsiso/(N1.*1*1));
+
+for i=1:N1
+   fronorm_siso_norm(i) = norm(H_normsiso(1,1,i),"fro"); 
+end
+
+% for i=1:N1
+%    eigenvalues_siso(:,i) = eig(H_siso(1,1,i)); 
+% end
+% abs_eigenvalues_siso = abs(eigenvalues_siso);
+
+
+for j=1:length(SNR)
+    %inside_capsiso = 1+(SNR(j)/1).*abs_eigenvalues_siso;
+    inside_capsiso = 1+(SNR(j)/1).*(fronorm_siso_norm.*fronorm_siso_norm);
+    for i=1:N1
+        capacity_siso(j,i) = sum(log2(inside_capsiso(:,i)));
+    end
+    capacity_siso_erg(j) = sum(capacity_siso(j,:))/N1;
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% For MISO 
+
+H_miso = H_part2(1,1:2,:);
+
+for i =1:N1
+    fronorm_miso(i) = norm(H_miso(1,1:2,i),"fro");
+end
+sum_fronormmiso = sum(fronorm_miso.*fronorm_miso);
+H_normmiso = H_miso/sqrt(sum_fronormmiso/(N1*2*1));
+
+for i = 1:N1
+    fronorm_miso_norm(i) = norm(H_normmiso(1,1:2,i),'fro');
+end
+for j=1:length(SNR)
+    inside_capmiso = 1 + (SNR(j)/2).*(fronorm_miso_norm.*fronorm_miso_norm);
+    for i=1:N1
+        capacity_miso(j,i) = sum(log2(inside_capmiso(:,i)));
+    end
+    capacity_miso_erg(j) = sum(capacity_miso(j,:))/N1;
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% SIMO
+H_simo = H_part2(1:2,1,1:N1);
+
+for i=1:N1
+    fronorm_simo(i) = norm(H_simo(1:2,1,i),"fro");
+end
+sum_fronormsimo = sum(fronorm_simo.*fronorm_simo);
+H_normsimo = H_simo/sqrt(sum_fronormsimo/(N1*1*2));
+for i=1:N1
+    fronorm_simo_norm(i) = norm(H_normsimo(1:2,1,i),"fro");
+end
+for j=1:length(SNR)
+    inside_capsimo = 1+(SNR(j)).*(fronorm_simo_norm.*fronorm_simo_norm);
+    for i=1:N1
+        capacity_simo(j,i) = sum(log2(inside_capsimo(:,i)));
+    end
+    capacity_simo_erg(j) = sum(capacity_simo(j,:))/N1;
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% MIMO - 2x2
+H_mimo_2 = H_part2(1:2,1:2,:);
+for i=1:N1
+    fronorm_mimo_2(i) = norm(H_mimo_2(1:2,1:2,i),"fro");   
+end
+sum_fronorm_mimo_2 = sum(fronorm_mimo_2.*fronorm_mimo_2);
+H_mimo_2_norm = H_mimo_2./sqrt(sum_fronorm_mimo_2./(N1.*2.*2));
+
+for i=1:N1
+    eigenvalues_mimo_2(:,i) = eig(H_mimo_2_norm(1:2,1:2,i));
+end
+abseigen_mimo_2 = abs(eigenvalues_mimo_2);
+
+for j=1:length(SNR)
+    inside_cap_mimo2 = 1 + ((SNR(j).*abseigen_mimo_2)./2);
+    for i=1:N1
+        capacity_mimo_2(j,i) = sum(log2(inside_cap_mimo2(:,i))); 
+    end
+    capacity_mimo_2_erg(j) = sum(capacity_mimo_2(j,:))/N1;
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% MIMO - 4x4
+H_mimo_4 = H_part2;
+for i=1:N1
+    fronorm_mimo_4(i) = norm(H_mimo_4(1:4,1:4,i),"fro");   
+end
+sum_fronorm_mimo_4 = sum((fronorm_mimo_4).^2);
+H_mimo_4_norm = H_mimo_4./sqrt(sum_fronorm_mimo_4./(N1.*4.*4));
+
+for i=1:N1
+eigenvalues_mimo_4(:,i) = eig(H_mimo_4_norm(1:4,1:4,i));
+end
+abseigen_mimo_4 = abs(eigenvalues_mimo_4);
+
+for j=1:length(SNR)
+    inside_cap_mimo4 = 1.+(SNR(j).*abseigen_mimo_4)./4;
+    for i=1:N1
+        capacity_mimo_4(j,i) = sum(log2(inside_cap_mimo4(:,i))); 
+    end
+    capacity_mimo_4_erg(j) = sum(capacity_mimo_4(j,:))/N1;
+end
+
+figure(3)
+plot(SNRdb,capacity_siso_erg,'k-')
+hold on
+plot(SNRdb,capacity_miso_erg,'r--')
+plot(SNRdb,capacity_simo_erg,'g-')
+plot(SNRdb,capacity_mimo_2_erg,'m-')
+plot(SNRdb,capacity_mimo_4_erg,'b-')
+hold off
+legend('SISO','MISO','SIMO','MIMO 2x2','MIMO 4x4','Location','best');
+title('Ergodic capacities(channel unknown) for different configurations vs SNR')
+
+for j=1:length(SNR)
+
+    [f_siso x_siso] = ecdf(capacity_siso(j,:));
+    siso_outage_cap_10(j) = x_siso(max(find(f_siso<=0.1)));
+    siso_outage_cap_1(j) = x_siso(max(find(f_siso<=0.01)));
+    
+    [f_miso x_miso] = ecdf(capacity_miso(j,:));
+    miso_outage_cap_10(j) = x_miso(max(find(f_miso<=0.1)));
+    miso_outage_cap_1(j) = x_miso(max(find(f_miso<=0.01)));
+
+    [f_simo, x_simo] = ecdf(capacity_simo(j,:));
+    simo_outage_cap_10(j) = x_simo(max(find(f_simo<=0.1)));
+    simo_outage_cap_1(j) = x_simo(max(find(f_simo<=0.01)));
+
+    [f_mimo2,x_mimo2] = ecdf(capacity_mimo_2(j,:));
+    mimo2_outage_cap_10(j) = x_mimo2(max(find(f_mimo2<=0.1)));
+    mimo2_outage_cap_1(j) = x_mimo2(max(find(f_mimo2<=0.01)));
+
+    [f_mimo4,x_mimo4] = ecdf(capacity_mimo_4(j,:));
+    mimo4_outage_cap_10(j) = x_mimo4(max(find(f_mimo4<=0.1)));
+    mimo4_outage_cap_1(j) = x_mimo4(max(find(f_mimo4<=0.01)));
+end
+
+figure(4)
+cdfplot(capacity_mimo_2(11,:));
+
+
+figure(5) 
+plot(SNRdb,siso_outage_cap_1,'b--');
+hold on
+plot(SNRdb,miso_outage_cap_1,'r--');
+plot(SNRdb,simo_outage_cap_1,'g--');
+plot(SNRdb,mimo2_outage_cap_1,'k--');
+plot(SNRdb,mimo4_outage_cap_1,'m--');
+hold off
+xlabel('SNR in dB')
+ylabel('Outage capacity')
+legend('SISO -1%','MISO -1%','SIMO -1%','MIMO2 -1%','MIMO4 -1%','Location','best');
+title('1% Outage Capacities vs SNR')
+
+figure(6)
+plot(SNRdb,siso_outage_cap_10,'b--');
+hold on
+plot(SNRdb,miso_outage_cap_10,'r--');
+plot(SNRdb,simo_outage_cap_10,'g--');
+plot(SNRdb,mimo2_outage_cap_10,'k--');
+plot(SNRdb,mimo4_outage_cap_10,'m--');
+hold off 
+xlabel('SNR in dB')
+ylabel('Outage capacity')
+legend('SISO -10%','MISO -10%','SIMO -10%','MIMO2 -10%','MIMO4 -10%','Location','best');
+title('10% Outage Capacities vs SNR')
