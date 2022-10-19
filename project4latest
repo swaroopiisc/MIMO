@@ -214,3 +214,15 @@ semilogy(SNRdb,BER_mimo_avg_mmse/Nbits_mimo)
 legend('ML','ZF','MMSE')
 hold off
 toc
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% function
+function z = ML_decoding(y,H)
+    tx = [[1;1],[1;-1],[-1;1],[-1;-1]];
+    s11 = norm(y - (1/sqrt(2)).*(H*[1;1]),"fro");
+    s1_1 =  norm(y - (1/sqrt(2)).*(H*[1;-1]),"fro");
+    s_11 = norm(y - (1/sqrt(2)).*(H*[-1;1]),"fro");
+    s_1_1 =  norm(y - (1/sqrt(2)).*(H*[-1;-1]),"fro");
+    s = [s11,s1_1,s_11,s_1_1];
+    [~,idx] = min(s);
+    z = tx(:,idx);
+end
