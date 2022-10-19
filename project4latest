@@ -1,5 +1,5 @@
+% task 1
 clear all;
-clc;
 tic
 
 %% H = Hw
@@ -20,17 +20,21 @@ for i = 1:N
     fronorm(i) = norm(Hw(:,:,i),"fro").^2;
     H_norm(:,:,i) = Hw(:,:,i)./sqrt(fronorm(i)/(Mt*Mr));
 end
+sum_fronorm = sum(fronorm);
+H_normnew = Hw./sqrt(sum_fronorm/(N*Mt*Mr));
 
 for i = 1:N
     fronorm_siso(i) = norm(H_siso(:,:,i),"fro").^2;
     H_norm_siso(:,:,i) = H_siso(:,:,i)./sqrt(fronorm_siso(i)/(Mt_siso*Mr_siso));
 end
+sum_fronorm_siso = sum(fronorm_siso);
+H_norm_siso_new = H_siso./sqrt(sum_fronorm_siso/(N*Mt_siso*Mr_siso));
 
-Nbits = 5e5;   % Number of bits
-bits = round(rand(3,Nbits));     % bit generation
+Nbits = 1e4;   % Number of bits
+bits = randi([0,1],3,Nbits);     % bit generation
 bits = bits.*2 - 1;   % BPSK modulation
 
-bits_siso = round(rand(1,Nbits));     % bit generation
+bits_siso = randi([0,1],1,Nbits);     % bit generation
 bits_siso = bits_siso.*2 - 1;   % BPSK modulation
 
 for i = 1:M
@@ -43,14 +47,15 @@ SNR = 10.^(SNRdb./10);   % Linear SNR
 No = Sigpower(1)./SNR;  % Noise variance 
 
 for i = 1:length(No)
-    noise_values(:,:) = randn(3,Nbits).*sqrt(No(i));
-    noise_values_siso = randn(1,Nbits).*sqrt(No(i));
+    noise_values(:,:) = (randn(3,Nbits) + 1j*randn(3,Nbits)).*sqrt(No(i));
+    noise_values_siso = noise_values(1,:);
     for iii = 1:N 
-        [U, S, V] = svd(H_norm(:,:,iii));
-        [U_siso, S_siso, V_siso] = svd(H_norm_siso(:,:,iii));
+        [U, S, V] = svd(H_normnew(:,:,iii));
+        [U_siso, S_siso, V_siso] = svd(H_norm_siso_new(:,:,iii));
         for ii = 1:Nbits            
-            y(:,ii) = (1/sqrt(Mt)).*(H_norm(:,:,iii)*V*bits(:,ii)) + noise_values(:,ii);
-            y_siso(:,ii) = H_norm_siso(:,:,iii)*V_siso*bits_siso(:,ii) + noise_values_siso(:,ii);
+            y(:,ii) = (1/sqrt(Mt)).*(H_normnew(:,:,iii)*V*bits(:,ii)) + noise_values(:,ii);
+            y_siso(:,ii) = H_norm_siso_new(:,:,iii)*V_siso*bits_siso(:,ii) + noise_values_siso(:,ii);
+
             z(:,ii) = U'*y(:,ii);
             z_siso(:,ii) = U_siso'*y_siso(:,ii);
         end
@@ -69,14 +74,14 @@ end
 figure(1)
 grid on
 set(gca, 'YScale', 'log')
-semilogy(SNRdb,BERavg/Nbits);
+semilogy(SNRdb,BERavg/Nbits,'k-');
 hold on
-semilogy(SNRdb,BER1_mean/Nbits);
-semilogy(SNRdb,BER2_mean/Nbits);
-semilogy(SNRdb,BER3_mean/Nbits);
-semilogy(SNRdb,BER_siso_avg/Nbits);
+semilogy(SNRdb,BER1_mean/Nbits,'r-');
+semilogy(SNRdb,BER2_mean/Nbits,'b-');
+semilogy(SNRdb,BER3_mean/Nbits,'g-');
+semilogy(SNRdb,BER_siso_avg/Nbits,'m--');
 hold off
-legend('Average BER','Eigen Value 1','Eigen Value 2','Eigen Value 3','SISO')
+legend('Average BER','Eigen Value 1','Eigen Value 2','Eigen Value 3','SISO','Location','best')
 xlabel('SNR')
 ylabel('BER')
 title('BER comparision for H = Hw')
@@ -98,11 +103,11 @@ fronorm_i_siso = norm(H_I_siso,"fro").^2;
 
 H_I_norm_siso = H_I_siso/sqrt(fronorm_i_siso);
 
-Nbits = 1e6;   % Number of bits
-bits_i = round(rand(3,Nbits));     % bit generation
+Nbits = 1e4;   % Number of bits
+bits_i = randi([0,1],3,Nbits);     % bit generation
 bits_i = bits_i.*2 - 1;   % BPSK modulation
 
-bits_siso_i = round(rand(1,Nbits));     % bit generation
+bits_siso_i = randi([0,1],1,Nbits);     % bit generation
 bits_siso_i = bits_siso_i.*2 - 1;   % BPSK modulation
 
 for i = 1:M
@@ -114,8 +119,8 @@ SNR = 10.^(SNRdb./10);   % Linear SNR
 No = Sigpower(1)./SNR;  % Noise variance 
 
 for i = 1:length(No)
-    noise_values_i(:,:) = randn(3,Nbits).*sqrt(No(i));
-    noise_values_siso_i(:,:) = randn(1,Nbits).*sqrt(No(i));
+    noise_values_i(:,:) = (randn(3,Nbits) + 1j*randn(3,Nbits)).*sqrt(No(i));
+    noise_values_siso_i(:,:) = (randn(1,Nbits) + 1j*randn(1,Nbits)).*sqrt(No(i));
     [U_I, S_I, V_I] = svd(H_I_norm);
     [U_siso_i, S_siso_i, V_siso_i] = svd(H_I_norm_siso);
     for ii = 1:Nbits            
@@ -134,24 +139,21 @@ end
 figure(2)
 grid on
 set(gca, 'YScale', 'log')
-semilogy(SNRdb,BERavg_i/Nbits);
+semilogy(SNRdb,BERavg_i/Nbits,'k-');
 hold on
-semilogy(SNRdb,BER1_i/Nbits);
-semilogy(SNRdb,BER2_i/Nbits);
-semilogy(SNRdb,BER3_i/Nbits);
-semilogy(SNRdb,BER_siso_i/Nbits);
+semilogy(SNRdb,BER1_i/Nbits,'r-');
+semilogy(SNRdb,BER2_i/Nbits,'b-');
+semilogy(SNRdb,BER3_i/Nbits,'g-');
+semilogy(SNRdb,BER_siso_i/Nbits,'m-');
 hold off
-legend('Average BER','Eigen Value 1','Eigen Value 2','Eigen Value 3','SISO')
+legend('Average BER','Eigen Value 1','Eigen Value 2','Eigen Value 3','SISO','Location','best')
 xlabel('SNR')
 ylabel('BER')
 title('BER comparision for H = I')
 toc
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%task 2
+% task 2
 clear all;
-clc;
 tic
 load('LOS_8_8.mat');
 
@@ -167,7 +169,7 @@ H_mimo_norm = H_mimo/sqrt(sum_fronorm_2_2/(N*2*2));
 M=2;
 Mt_mimo=M;
 Mr_mimo=M;
-Nbits_mimo = 2e5;
+Nbits_mimo = 5e3;
 bits_mimo = round(rand(1,2*Nbits_mimo));
 bits_mimo = 2.*bits_mimo-1;
 bits_mimo = reshape(bits_mimo,2,[]);
@@ -176,13 +178,13 @@ for i = 1:M
     Sigpower(i,1) = sum(bits_mimo(i,:).^2)/length(bits_mimo(i,:));
 end
 
-SNRdb = [0:1:5,10:5:40];  % 0-12 dB SNR
+SNRdb = [0:2:16];  % 0-12 dB SNR
 SNR = 10.^(SNRdb./10);   % Linear SNR
 
 No = Sigpower(1)./SNR;  % Noise variance 
 
 for i = 1:length(No)
-   noise_values_mimo(:,:) = randn(2,Nbits_mimo)*sqrt(No(i));
+   noise_values_mimo(:,:) = (randn(2,Nbits_mimo) + 1j*randn(2,Nbits_mimo))*sqrt(No(i));
    for iii = 1:N
        for ii = 1:Nbits_mimo
             y_mimo(:,ii) = (1/sqrt(Mt_mimo)).*H_mimo_norm(:,:,iii)*bits_mimo(:,ii) + noise_values_mimo(:,ii);
@@ -212,20 +214,3 @@ semilogy(SNRdb,BER_mimo_avg_mmse/Nbits_mimo)
 legend('ML','ZF','MMSE')
 hold off
 toc
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% function for ML
-
-function z = ML_decoding(y,H)
-    tx = [[1;1],[1;-1],[-1;1],[-1;-1]];
-    s11 = norm(y - (1/sqrt(2)).*(H*[1;1]),"fro");
-    s1_1 =  norm(y - (1/sqrt(2)).*(H*[1;-1]),"fro");
-    s_11 = norm(y - (1/sqrt(2)).*(H*[-1;1]),"fro");
-    s_1_1 =  norm(y - (1/sqrt(2)).*(H*[-1;-1]),"fro");
-    s = [s11,s1_1,s_11,s_1_1];
-    [~,idx] = min(s);
-    z = tx(:,idx);
-end
-
-
