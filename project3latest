@@ -1,0 +1,142 @@
+clear all;
+clc;
+tic
+load('LOS_8_8.mat');
+% Task 1
+Mt_mimo = 2;
+Mr_mimo = 2;
+H_mimo = H(1:2,1:2,:);
+H_siso = H(1,1,:);
+N = 401;
+
+fronorm_mimo = zeros(1,N);
+fronorm_siso = zeros(1,N);
+H_mimo_norm = zeros(size(H_mimo));
+H_siso_norm = zeros(size(H_siso));
+
+for i = 1:N
+    fronorm_mimo(i) = norm(H_mimo(:,:,i),"fro").^2;
+    fronorm_siso(i) = norm(H_siso(:,:,i),"fro").^2;
+    H_mimo_norm(:,:,i) = H_mimo(:,:,i)/sqrt(fronorm_mimo(i)/(Mt_mimo*Mr_mimo));
+    [U(:,:,i),S(:,:,i),V(:,:,i)] = svd(H_mimo_norm(:,:,i));
+    H_siso_norm(:,:,i) = H_siso(:,:,i)/sqrt(fronorm_siso(i)/(1*1));
+end
+
+w(:,:,:) = sqrt(Mt_mimo).*V(:,1,:);
+g = U(:,1,:);
+
+Nbits = 5*1e4;
+bits_mimo = round(rand(1,Nbits));
+bits_mimo = bits_mimo.*2-1;
+bits_dom_eig = bits_mimo;
+bits_mimo = reshape(bits_mimo,2,[]);
+
+SNRdb = 0:12;
+SNR = 10.^(SNRdb./10);
+
+Es = sum(bits_mimo.^2,'all')/Nbits;
+No = Es./SNR;
+
+y_siso = zeros(2,Nbits/2);
+y = zeros(4,Nbits/2);
+y_dom_eig1 = zeros(2,Nbits/2);
+y_dom_eig2 = zeros(2,Nbits/2);
+z = zeros(2,Nbits/2);
+z_siso = zeros(2,Nbits/2);
+z_dom_eig = zeros(2,Nbits/2);
+BER_mimo_realisation = zeros(1,N);
+BER_siso_realisation = zeros(1,N);
+BER_dom_eig_realisation = zeros(1,N);
+BER_mimo = zeros(1,length(No));
+BER_siso = zeros(1,length(No));
+BER_dom_eig = zeros(1,length(No));
+
+for i = 1:length(No)
+    noise_values(1,:) = randn(1,Nbits/2)*sqrt(No(i));
+    noise_values(2,:) = randn(1,Nbits/2)*sqrt(No(i));
+    noise_values(3,:) = randn(1,Nbits/2)*sqrt(No(i));
+    noise_values(4,:) = randn(1,Nbits/2)*sqrt(No(i));
+
+    for iii = 1:N
+        H_eff1 = [H_mimo_norm(1,1,iii),H_mimo_norm(1,2,iii);H_mimo_norm(2,1,iii),H_mimo_norm(2,2,iii)];
+        H_eff2 = [conj(H_eff1(:,2)),-conj(H_eff1(:,1))];
+        H_eff = [H_eff1;H_eff2];
+        h_siso = H_siso_norm(:,:,iii);
+        for ii = 1:Nbits/2
+            y(:,ii) = (sqrt(Es/Mt_mimo)).*(H_eff*bits_mimo(:,ii)) + noise_values(:,ii);
+            y_siso(:,ii) = sqrt(Es).*h_siso.*bits_mimo(:,ii) + noise_values(1:2,ii);
+            y_dom_eig1(:,ii) = (sqrt(Es/Mt_mimo)).*(H_mimo_norm(:,:,iii)*w(:,:,iii)*bits_mimo(1,ii)) + noise_values(1:2,ii);
+            y_dom_eig2(:,ii) = (sqrt(Es/Mt_mimo)).*(H_mimo_norm(:,:,iii)*w(:,:,iii)*bits_mimo(2,ii)) + noise_values(1:2,ii);
+            
+            z(:,ii) = H_eff'*y(:,ii);
+            z_siso(:,ii) = h_siso'.*y_siso(:,ii);
+            z_dom_eig(1,ii) = g(:,:,iii)'*y_dom_eig1(:,ii); 
+            z_dom_eig(2,ii) = g(:,:,iii)'*y_dom_eig2(:,ii);
+
+        end
+        BER_mimo_realisation(iii) = numel(find(sign(real(z))-bits_mimo));
+        BER_siso_realisation(iii) = numel(find(sign(real(z_siso))-bits_mimo));
+        BER_dom_eig_realisation(iii) = numel(find(sign(real(z_dom_eig))-bits_mimo));
+    end
+    BER_mimo(i) = mean(BER_mimo_realisation);
+    BER_siso(i) = mean(BER_siso_realisation);
+    BER_dom_eig(i) = mean(BER_dom_eig_realisation);
+end
+
+figure
+set(gca, 'YScale', 'log')
+semilogy(SNRdb,BER_mimo/Nbits)
+hold on 
+semilogy(SNRdb,BER_siso/Nbits)
+legend('BER - Alamouti','BER - SISO','Location','best')
+hold off
+
+figure
+set(gca, 'YScale', 'log')
+semilogy(SNRdb,BER_mimo/Nbits)
+hold on 
+semilogy(SNRdb,BER_siso/Nbits)
+semilogy(SNRdb,BER_dom_eig/Nbits)
+legend('BER - Alamouti','BER - SISO','Dominant eigen value','Location','best');
+hold off
+toc
+
+tic
+N=400; %No of channel realisations
+Mr = 2;
+Mt = 2;
+Hw=1/sqrt(2)*(randn(Mr,Mt,N)+1j*randn(Mr,Mt,N));
+
+y_corr = zeros(4,Nbits/2);
+z_corr = zeros(2,Nbits/2);
+
+r = [0,0.5:0.1:1];
+figure
+set(gca, 'YScale', 'log')
+hold on
+for j = 1:length(r)
+    Rr = [1,r(j);r(j),1];
+    Rt = Rr;
+    for i = 1:length(No)
+        noise_values(1,:) = randn(1,Nbits/2)*sqrt(No(i));
+        noise_values(2,:) = randn(1,Nbits/2)*sqrt(No(i));
+        noise_values(3,:) = randn(1,Nbits/2)*sqrt(No(i));
+        noise_values(4,:) = randn(1,Nbits/2)*sqrt(No(i));
+        for iii = 1:N
+            H = (Rr^0.5)*Hw(:,:,iii)*(Rt^0.5);
+            H_eff1_corr = [H(1,1),H(1,2);H(2,1),H(2,2)];
+            H_eff2_corr = [conj(H_eff1_corr(:,2)),-conj(H_eff1_corr(:,1))];
+            H_eff_corr = [H_eff1_corr;H_eff2_corr];
+            for ii = 1:Nbits/2
+                y_corr(:,ii) = (sqrt(Es/Mt_mimo)).*(H_eff_corr*bits_mimo(:,ii)) + noise_values(:,ii);
+                z_corr(:,ii) = H_eff_corr'*y_corr(:,ii);
+            end
+            BER_corr_realisation(iii) = numel(find(sign(real(z_corr))-bits_mimo));
+        end
+        BER_corr(j,i) = mean(BER_corr_realisation);
+    end
+    semilogy(SNRdb,BER_corr(j,:)/Nbits);
+end
+hold off
+legend('r=0','r=0.5','r=0.6','r=0.7','r=0.8','r=0.9','r=1');
+toc
