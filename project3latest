@@ -100,7 +100,8 @@ semilogy(SNRdb,BER_dom_eig/Nbits)
 legend('BER - Alamouti','BER - SISO','Dominant eigen value','Location','best');
 hold off
 toc
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%task-2
 tic
 N=400; %No of channel realisations
 Mr = 2;
